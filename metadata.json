@@ -1,0 +1,8 @@
+{
+  "name": "OPME",
+  "description": "An application for hospital teams to select their hospital, upload multiple OPME consumption documents for a day, and generate a consolidated HTML replenishment order with an option to save as PDF. Data extraction is powered by AI.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "prompt": ""
+}
