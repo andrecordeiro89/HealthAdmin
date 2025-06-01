@@ -63,7 +63,7 @@ O **HealthAdmin** é uma solução moderna e inteligente para a gestão de mater
    http://localhost:5173
    ```
 
-## 📋 Scripts Disponíveis
+## Scripts Disponíveis
 
 ```bash
 # Desenvolvimento
