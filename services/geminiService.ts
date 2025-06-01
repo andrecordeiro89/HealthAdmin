@@ -1,9 +1,8 @@
-
 import { GoogleGenAI, GenerateContentResponse, GenerateContentParameters, Content } from "@google/genai";
 import { ExtractedData, MaterialUsed } from '../types'; // Added MaterialUsed to ensure type safety
 import { GEMINI_MODEL_TEXT } from '../constants';
 
-const apiKey = process.env.API_KEY;
+const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
   console.error("API_KEY for Gemini is not set in environment variables. AI processing will fail.");
 }
@@ -43,25 +42,39 @@ A ESTRUTURA EXATA DO OBJETO JSON DEVE SER:
 `;
 
 const PROMPT_FOR_IMAGE_CASE_TEMPLATE = `
-Você recebeu uma imagem de um documento de consumo hospitalar e, opcionalmente, um texto adicional fornecido pelo usuário.
+Você recebeu uma imagem de um documento hospitalar de controle de OPME. Siga as instruções abaixo para extrair os dados:
 
-TAREFA PRINCIPAL:
+1. **DADOS DO PACIENTE, MÉDICO, PROCEDIMENTO, DATA DE NASCIMENTO E DATA DE CIRURGIA:**
+   - Sempre localize essas informações no TOPO da imagem, independentemente da orientação (paisagem ou retrato).
+   - Se a imagem estiver de lado, considere o topo visual da imagem como referência.
+   - Extraia exatamente como está escrito, corrigindo apenas erros óbvios de OCR.
 
-1.  REALIZAR OCR (RECONHECIMENTO ÓPTICO DE CARACTERES) PRECISO NA IMAGEM:
-    a.  Extraia TODO o texto visível da IMAGEM FORNECIDA. Este é o texto primário para a extração de dados.
-    b.  FOCO ESPECIAL NA PRECISÃO DO OCR: Preste atenção EXTREMA à precisão do OCR para os seguintes campos:
-        - Nomes de Pacientes e Médicos (incluindo acentos e grafias corretas).
-        - Datas (formatar como DD/MM/AAAA).
-        - Descrições COMPLETAS e EXATAS dos materiais.
-        - Códigos de materiais (ex: P-205, CB-100).
-        - Números de Lote.
-        - Quantidades numéricas.
-    c.  CUIDADO COM AMBIGUIDADES DE CARACTERES: Diferencie cuidadosamente caracteres que podem ser confundidos (ex: '0' e 'O', '1' e 'l'/'I', '5' e 'S', '8' e 'B'). Use o contexto (ex: códigos de material geralmente usam números, datas usam números) para decidir o caractere correto.
-    d.  SEÇÕES MANUSCRITAS: Textos manuscritos exigem atenção redobrada. Transcreva-os com a maior precisão possível. Se uma informação CRÍTICA (como nome do paciente ou descrição de um material principal) estiver manuscrita e for COMPLETAMENTE ILEGÍVEL, use o valor \`null\` para o campo correspondente no JSON.
+2. **MATERIAIS UTILIZADOS:**
+   - Os materiais SEMPRE aparecem na parte do MEIO do documento, dentro de uma forma geométrica (geralmente um QUADRADO).
+   - Cada material pode estar em uma ETIQUETA (com código, lote, fabricante, etc.) ou escrito à mão (letra de forma ou cursiva).
+   - Para cada material, extraia:
+     - Descrição completa
+     - Código (se houver)
+     - Lote (se houver)
+     - Fabricante (se houver)
+     - Observações manuscritas próximas
+   - Se o material estiver escrito à mão, tente transcrever com máxima precisão, mesmo que a letra seja difícil.
+
+3. **PADRÕES DE FORMATO:**
+   - Datas: sempre no formato DD/MM/AAAA.
+   - Códigos e lotes: extraia exatamente como aparecem, mesmo que estejam em etiquetas ou manuscritos.
+
+4. **EXTRAÇÃO ESTRUTURADA:**
+   - Retorne os dados em JSON conforme o modelo abaixo.
+   - Se algum campo não for encontrado, use null.
+
+5. **CUIDADO COM AMBIGUIDADES DE CARACTERES:**
+   - Diferencie cuidadosamente caracteres que podem ser confundidos (ex: '0' e 'O', '1' e 'l'/'I', '5' e 'S', '8' e 'B'). Use o contexto (ex: códigos de material geralmente usam números, datas usam números) para decidir o caractere correto.
+
+6. **SEÇÕES MANUSCRITAS:**
+   - Textos manuscritos exigem atenção redobrada. Transcreva-os com a maior precisão possível. Se uma informação CRÍTICA (como nome do paciente ou descrição de um material principal) estiver manuscrita e for COMPLETAMENTE ILEGÍVEL, use o valor null para o campo correspondente no JSON.
+
 {{USER_PROVIDED_TEXT_BLOCK_PLACEHOLDER}}
-
-2.  ESTRUTURAR OS DADOS EM JSON:
-    Com base no texto obtido da imagem (e considerando o texto suplementar do usuário, se fornecido e relevante, como CONTEXTO ADICIONAL), crie um objeto JSON seguindo as regras abaixo. A informação extraída diretamente da imagem é PRIORITÁRIA.
 
 REGRAS ESTRITAS PARA A SAÍDA JSON (aplicadas AO TEXTO EXTRAÍDO PELA ETAPA DE OCR):
 ${SHARED_JSON_RULES_AND_STRUCTURE}
@@ -214,14 +227,14 @@ export async function extractOrderDetailsFromText(
   } catch (error) {
     const requestPromptForLogging = typeof requestPayloadContents === 'string' 
         ? requestPayloadContents 
-        : (requestPayloadContents as Content).parts.map(p => (p as {text: string}).text || "[image_part]").join("\n");
+        : (requestPayloadContents as Content).parts?.map(p => (p as {text: string}).text || "[image_part]").join("\n");
 
     console.error(
         "Error calling Gemini API or parsing response. Input type:", 
         isImageInput ? "Image" : "Text", 
         "Raw AI Response Text:", rawResponseText, 
         "Attempted to parse:", jsonStrToParse, 
-        "Request Prompt Snippet:", requestPromptForLogging.substring(0, 500) 
+        "Request Prompt Snippet:", requestPromptForLogging?.substring(0, 500) ?? ""
     );
     let errorMessage = "Falha ao comunicar com o serviço de IA ou processar a resposta.";
     if (error instanceof Error) {

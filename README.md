@@ -1,17 +1,17 @@
-## 🎯 Sobre o Projeto
+## Sobre o Projeto
 
 O **HealthAdmin** é uma solução moderna e inteligente para a gestão de materiais OPME em ambientes hospitalares. Desenvolvido com tecnologias de ponta, o sistema utiliza Inteligência Artificial para automatizar processos manuais e otimizar a reposição de materiais médicos.
 
-### ✨ Principais Funcionalidades
+### Principais Funcionalidades
 
-- 🏥 **Seleção de Hospital** - Interface intuitiva para seleção da unidade hospitalar
-- 📸 **Upload Inteligente** - Carregamento múltiplo de documentos de consumo OPME
-- 🤖 **Processamento IA** - Extração automática de dados usando Google Gemini AI
-- 📋 **Consolidação Automática** - Geração de pedidos de reposição consolidados
-- 📄 **Exportação PDF** - Conversão instantânea para formato PDF profissional
-- 📊 **Relatórios Estruturados** - Tabelas organizadas com dados processados
+- **Seleção de Hospital** - Interface intuitiva para seleção da unidade hospitalar
+- **Upload Inteligente** - Carregamento múltiplo de documentos de consumo OPME
+- **Processamento IA** - Extração automática de dados usando Google Gemini AI
+- **Consolidação Automática** - Geração de pedidos de reposição consolidados
+- **Exportação PDF** - Conversão instantânea para formato PDF profissional
+- **Relatórios Estruturados** - Tabelas organizadas com dados processados
 
-## 🛠️ Stack Tecnológica
+## Stack Tecnológica
 
 ### Frontend
 - **React 19.1.0** - Biblioteca JavaScript para interfaces de usuário
@@ -27,7 +27,7 @@ O **HealthAdmin** é uma solução moderna e inteligente para a gestão de mater
 - **html2pdf.js 0.10.3** - Conversão HTML para PDF
 - **jspdf-autotable 3.8.2** - Criação de tabelas em PDF
 
-## 🚀 Instalação e Configuração
+## Instalação e Configuração
 
 ### Pré-requisitos
 - Node.js (versão 18 ou superior)
@@ -63,7 +63,7 @@ O **HealthAdmin** é uma solução moderna e inteligente para a gestão de mater
    http://localhost:5173
    ```
 
-## 📋 Scripts Disponíveis
+## Scripts Disponíveis
 
 ```bash
 # Desenvolvimento
@@ -76,7 +76,7 @@ npm run build
 npm run preview
 ```
 
-## 🏗️ Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 📁 HealthAdmin/
@@ -93,7 +93,7 @@ npm run preview
 └── 📄 .gitignore              # Arquivos ignorados pelo Git
 ```
 
-## 🔧 Como Usar
+## Como Usar
 
 ### 1. Seleção do Hospital
 - Escolha a unidade hospitalar na interface inicial
@@ -119,7 +119,7 @@ npm run preview
 - Download automático do arquivo formatado
 - Pronto para envio aos fornecedores
 
-## 🤝 Contribuindo
+## Contribuindo
 
 Contribuições são sempre bem-vindas! Para contribuir:
 
@@ -129,7 +129,7 @@ Contribuições são sempre bem-vindas! Para contribuir:
 4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## 📝 Roadmap
+## Roadmap
 
 ### Próximas Funcionalidades
 - [ ] **Dashboard Analytics** - Relatórios de consumo e tendências
@@ -145,22 +145,22 @@ Contribuições são sempre bem-vindas! Para contribuir:
 - [ ] **Docker** - Containerização para deploy
 - [ ] **CI/CD** - Pipeline de integração contínua
 
-## 🔐 Segurança
+## Segurança
 
 - ✅ Validação de tipos com TypeScript
 - ✅ Sanitização de dados de entrada
 - ✅ Armazenamento seguro de chaves API
 - ✅ HTTPS obrigatório em produção
 
-## 📞 Suporte
+## Suporte
 
 Para suporte técnico ou dúvidas:
 
-- 📧 **Email**: [andrecordeiro89@gmail.com](mailto:andrecordeiro89@gmail.com)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/andrecordeiro89/HealthAdmin/issues)
-- 💬 **Discussões**: [GitHub Discussions](https://github.com/andrecordeiro89/HealthAdmin/discussions)
+- **Email**: [andre_cordeiro@outlook.com.br](mailto:andre_cordeiro@outlook.com.br)
+- **Issues**: [GitHub Issues](https://github.com/andrecordeiro89/HealthAdmin/issues)
+- **Discussões**: [GitHub Discussions](https://github.com/andrecordeiro89/HealthAdmin/discussions)
 
-## 📄 Licença
+## Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
