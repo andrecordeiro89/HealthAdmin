@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { AppState, ProcessedDocumentEntry, ExtractedData, ConsolidatedOrderData, ReplenishmentMaterial, MaterialUsed, HospitalOption, SourceDocumentInfoForPdf, CorrectedMaterialItem, MaterialDatabaseItem, GlobalMaterialConsumptionRow } from './types';
 import { INITIAL_SIMULATED_MATERIAL_DATABASE, UI_TEXT, INITIAL_HOSPITAL_OPTIONS } from './constants';
@@ -21,6 +19,11 @@ import { generateConsolidatedOrderPdf, generateGlobalMaterialConsumptionPdf } fr
 const LOCAL_STORAGE_ORDER_HISTORY_KEY = 'healthAdminAppOrderHistory';
 const LOCAL_STORAGE_HOSPITAL_OPTIONS_KEY = 'healthAdminAppHospitalOptions';
 const LOCAL_STORAGE_MATERIAL_DB_KEY = 'healthAdminAppMaterialDb';
+
+// Palavras-chave para observações críticas
+const OBSERVATION_KEYWORDS = [
+  'contaminado', 'alterado', 'danificado', 'espanado', 'estragado', 'não utilizado', 'nao utilizado', 'defeito', 'quebrado', 'não implantado', 'nao implantado'
+];
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.SELECTING_HOSPITAL);
@@ -426,29 +429,41 @@ const App: React.FC = () => {
       const lotKeyPart = consumedMat.lotNumber ? `_LOT_${consumedMat.lotNumber}` : '_NO_LOT';
       const key = `${materialBaseKey}${lotKeyPart}`;
       
+      // Função para filtrar observação
+      function filterObservation(obs?: string | null): string | null {
+        if (!obs) return null;
+        const obsLower = obs.toLowerCase();
+        for (const keyword of OBSERVATION_KEYWORDS) {
+          if (obsLower.includes(keyword)) {
+            return obs;
+          }
+        }
+        return null;
+      }
+
       if (aggregatedMaterials.has(key)) {
         const existing = aggregatedMaterials.get(key)!;
         existing.totalConsumedQuantity += consumedMat.quantity;
         if (!existing.sourceDocumentIds.includes(consumedMat.sourceDocId)) {
             existing.sourceDocumentIds.push(consumedMat.sourceDocId);
         }
-        if (consumedMat.observation) { 
-            if (!existing.observation) {
-                existing.observation = consumedMat.observation;
-            } else if (existing.observation !== consumedMat.observation && !existing.observation.includes(consumedMat.observation)) {
-                existing.observation += ` | ${consumedMat.observation}`; 
-            }
+        const filteredObs = filterObservation(consumedMat.observation);
+        if (filteredObs) {
+          if (!existing.observation) {
+            existing.observation = filteredObs;
+          } else if (existing.observation !== filteredObs && !existing.observation.includes(filteredObs)) {
+            existing.observation += ` | ${filteredObs}`;
+          }
         }
-
       } else {
         aggregatedMaterials.set(key, {
           description: consumedMat.description,
           code: consumedMat.code,
           lotNumber: consumedMat.lotNumber,
-          observation: consumedMat.observation, 
-          quantity: consumedMat.quantity, 
-          totalConsumedQuantity: consumedMat.quantity, 
-          replenishQuantity: 0, 
+          observation: filterObservation(consumedMat.observation),
+          quantity: consumedMat.quantity,
+          totalConsumedQuantity: consumedMat.quantity,
+          replenishQuantity: 0,
           sourceDocumentIds: [consumedMat.sourceDocId],
         });
       }
