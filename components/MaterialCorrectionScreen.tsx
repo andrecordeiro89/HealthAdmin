@@ -217,137 +217,155 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
 
   // Layout paisagem aprimorado: gradiente, tipografia, layout fluido
   return (
-    <div className="w-full h-[80vh] flex flex-row bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-xl shadow-xl border border-gray-200 overflow-hidden font-['Inter','Roboto','Montserrat',sans-serif]">
-      {/* Mensagem de destaque sobre a importância da correção para IA */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-[60vw] max-w-2xl">
-        <div className="bg-gradient-to-r from-yellow-100 via-yellow-50 to-yellow-200 border-l-4 border-yellow-400 text-yellow-900 text-center text-base font-semibold rounded-lg shadow p-3 mb-4">
-          Sua correção é fundamental para treinar e aprimorar a Inteligência Artificial do sistema. Por favor, revise e ajuste os dados com atenção!
+    <div className="relative w-full h-[80vh]">
+      <div className="w-full h-full flex flex-row bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-xl shadow-xl border border-gray-200 overflow-hidden font-['Inter','Roboto','Montserrat',sans-serif]">
+        {/* Mensagem de destaque sobre a importância da correção para IA */}
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-[60vw] max-w-2xl">
+          <div className="bg-gradient-to-r from-yellow-100 via-yellow-50 to-yellow-200 border-l-4 border-yellow-400 text-yellow-900 text-center text-base font-semibold rounded-lg shadow p-3 mb-4">
+            Sua correção é fundamental para treinar e aprimorar a Inteligência Artificial do sistema. Por favor, revise e ajuste os dados com atenção!
+          </div>
         </div>
-      </div>
-      {/* Coluna esquerda: Lista de pacientes e busca */}
-      <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0" style={{background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 60%, #d1d5db 100%)'}}>
-        <div className="p-4 pb-2">
-          <input
-            type="text"
-            placeholder="Buscar paciente..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border-none shadow focus:ring-2 focus:ring-purple-400 text-base font-medium text-slate-800 placeholder:text-slate-400"
-            style={{background: 'rgba(255,255,255,0.95)'}}
-          />
-        </div>
-        <div className="flex-1 overflow-y-auto px-2 pb-4">
-          {filteredPatientGroups.length === 0 ? (
-            <p className="text-slate-200 text-base text-center mt-8 font-semibold">Nenhum paciente encontrado.</p>
-          ) : (
-            <ul className="space-y-1">
-              {filteredPatientGroups.map(patientKey => (
-                <li key={patientKey}>
-                  <button
-                    className={`w-full text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none focus:ring-2 focus:ring-white/60 tracking-wide text-base shadow-sm
-                      ${patientKey === searchTerm ? 'bg-white text-indigo-700 border-indigo-400 ring-2 ring-indigo-300' : 'bg-indigo-500/10 text-white border-transparent hover:bg-indigo-400/20'}`}
-                    onClick={() => setSearchTerm(patientKey)}
-                    style={{letterSpacing: '0.02em'}}
-                  >
-                    {patientKey}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-      {/* Coluna direita: Dados e correções do paciente selecionado */}
-      <div className="flex-1 p-8 overflow-y-auto flex flex-col gap-8">
-        {/* Mantém o restante do conteúdo da tela, mas só mostra para o paciente selecionado */}
-        {filteredPatientGroups.map(patientKey => (
-          <section key={patientKey} className="mb-8">
-            <h3 className="text-2xl font-extrabold text-indigo-700 mb-4 tracking-wide border-b-2 border-indigo-100 pb-2 uppercase">{patientKey}</h3>
-            {groupedEditableDocs[patientKey]?.map(doc => (
-              <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0">
-                <div className="flex items-center gap-4 mb-2">
-                  <span className="text-slate-500 text-sm font-semibold">{doc.fileName}</span>
-                  <button
-                    onClick={() => handleViewDocument(doc.id)}
-                    className="ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-gray-500 to-gray-700 text-white text-xs font-bold shadow hover:from-gray-600 hover:to-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                  >Visualizar</button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Nome do Paciente (Extraído pela IA):</label>
-                    <div className="text-base font-bold text-indigo-800 mb-2">{doc.extractedData?.patientName || 'N/A'}</div>
-                    <label className="block text-xs font-semibold text-indigo-600 mb-1">Sua Correção / Confirmação:</label>
-                    <input
-                      type="text"
-                      value={doc.extractedData?.patientName || ''}
-                      onChange={e => handlePatientNameChange(doc.id, e.target.value)}
-                      className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-4"
-                      placeholder="Corrija o nome do paciente"
-                    />
-                  </div>
-                  <div>
-                    {/* Espaço reservado para possíveis dados adicionais do paciente */}
-                  </div>
-                </div>
-                {doc.extractedData?.materialsUsed.map((material, index) => (
-                  <div key={index} className="mt-6 p-4 rounded-lg bg-gradient-to-br from-white via-indigo-50 to-purple-50 border border-indigo-100 shadow-sm">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="text-sm font-bold text-indigo-600 mb-1">Extraído pela IA:</h4>
-                        <p className="text-xs text-slate-500 mb-1">Descrição do Material: <span className="font-semibold text-slate-700">{material.description}</span></p>
-                        <p className="text-xs text-slate-500 mb-1">Código do Material (se aplicável): <span className="font-semibold text-slate-700">{material.code || 'N/A'}</span></p>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-indigo-600 mb-1">Sua Correção / Confirmação:</h4>
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Descrição do Material</label>
-                        <input
-                          type="text"
-                          value={material.description}
-                          onChange={e => handleMaterialChange(doc.id, index, 'description', e.target.value)}
-                          className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
-                        />
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Código do Material (se aplicável)</label>
-                        <input
-                          type="text"
-                          value={material.code || ''}
-                          onChange={e => handleMaterialChange(doc.id, index, 'code', e.target.value)}
-                          className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700"
-                          placeholder="Ex: P-205 (se aplicável)"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-2"><strong>Qtd. Consumida (neste doc):</strong> {material.quantity}</p>
-                  </div>
+        {/* Coluna esquerda: Lista de pacientes e busca */}
+        <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%)'}}>
+          <div className="p-4 pb-2">
+            <input
+              type="text"
+              placeholder="Buscar paciente..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border-none shadow focus:ring-2 focus:ring-purple-400 text-base font-medium text-slate-800 placeholder:text-slate-400"
+              style={{background: 'rgba(255,255,255,0.95)'}}
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto px-2 pb-4">
+            {filteredPatientGroups.length === 0 ? (
+              <p className="text-slate-200 text-base text-center mt-8 font-semibold">Nenhum paciente encontrado.</p>
+            ) : (
+              <ul className="space-y-1">
+                {filteredPatientGroups.map(patientKey => (
+                  <li key={patientKey}>
+                    <button
+                      className={`w-full text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none focus:ring-2 focus:ring-white/60 tracking-wide text-base shadow-sm
+                        ${patientKey === searchTerm ? 'bg-white text-indigo-700 border-indigo-400 ring-2 ring-indigo-300' : 'bg-indigo-500/10 text-white border-transparent hover:bg-indigo-400/20'}`}
+                      onClick={() => setSearchTerm(patientKey)}
+                      style={{letterSpacing: '0.02em'}}
+                    >
+                      {patientKey}
+                    </button>
+                  </li>
                 ))}
-                {(!doc.extractedData || doc.extractedData.materialsUsed.length === 0) && (
-                  <p className="text-sm text-slate-500 italic text-center py-2">Nenhum material extraído para este documento.</p>
-                )}
-              </div>
-            ))}
-          </section>
-        ))}
-        {/* Botões de ação fixos ao final da coluna de dados/correção */}
-        <div className="mt-8 pt-6 border-t border-gray-200 space-y-3 md:space-y-0 md:flex md:flex-row md:justify-center md:space-x-4 items-center">
-          <button
-            onClick={onGoBack}
-            className={purpleGradientLight}
-          >
-            {UI_TEXT.backToDocumentManagementButton}
-          </button>
-          <button
-            onClick={onSkip}
-            className={purpleGradientSecondary}
-          >
-            {UI_TEXT.skipCorrectionsButton}
-          </button>
-          <button
-            onClick={handleSubmitCorrections}
-            className={purpleGradientPrimary}
-          >
-            {UI_TEXT.saveCorrectionsButton}
-          </button>
+              </ul>
+            )}
+          </div>
+        </div>
+        {/* Coluna direita: Dados e correções do paciente selecionado */}
+        <div className="flex-1 p-8 overflow-y-auto flex flex-col gap-8">
+          {/* Mantém o restante do conteúdo da tela, mas só mostra para o paciente selecionado */}
+          {filteredPatientGroups.map(patientKey => (
+            <section key={patientKey} className="mb-8">
+              <h3 className="text-2xl font-extrabold text-indigo-700 mb-4 tracking-wide border-b-2 border-indigo-100 pb-2 uppercase">{patientKey}</h3>
+              {groupedEditableDocs[patientKey]?.map(doc => (
+                <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0">
+                  <div className="flex items-center gap-4 mb-2">
+                    <span className="text-slate-500 text-sm font-semibold">{doc.fileName}</span>
+                    <button
+                      onClick={() => handleViewDocument(doc.id)}
+                      className="ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-gray-500 to-gray-700 text-white text-xs font-bold shadow hover:from-gray-600 hover:to-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    >Visualizar</button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Nome do Paciente (Extraído pela IA):</label>
+                      <div className="text-base font-bold text-indigo-800 mb-2">{doc.extractedData?.patientName || 'N/A'}</div>
+                      <label className="block text-xs font-semibold text-indigo-600 mb-1">Sua Correção / Confirmação:</label>
+                      <input
+                        type="text"
+                        value={doc.extractedData?.patientName || ''}
+                        onChange={e => handlePatientNameChange(doc.id, e.target.value)}
+                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-4"
+                        placeholder="Corrija o nome do paciente"
+                      />
+                    </div>
+                    <div>
+                      {/* Espaço reservado para possíveis dados adicionais do paciente */}
+                    </div>
+                  </div>
+                  {doc.extractedData?.materialsUsed.map((material, index) => (
+                    <div key={index} className="mt-6 p-4 rounded-lg bg-gradient-to-br from-white via-indigo-50 to-purple-50 border border-indigo-100 shadow-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <h4 className="text-sm font-bold text-indigo-600 mb-1">Extraído pela IA:</h4>
+                          <p className="text-xs text-slate-500 mb-1">Descrição do Material: <span className="font-semibold text-slate-700">{material.description}</span></p>
+                          <p className="text-xs text-slate-500 mb-1">Código do Material (se aplicável): <span className="font-semibold text-slate-700">{material.code || 'N/A'}</span></p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-indigo-600 mb-1">Sua Correção / Confirmação:</h4>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">Descrição do Material</label>
+                          <input
+                            type="text"
+                            value={material.description}
+                            onChange={e => handleMaterialChange(doc.id, index, 'description', e.target.value)}
+                            className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
+                          />
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">Código do Material (se aplicável)</label>
+                          <input
+                            type="text"
+                            value={material.code || ''}
+                            onChange={e => handleMaterialChange(doc.id, index, 'code', e.target.value)}
+                            className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700"
+                            placeholder="Ex: P-205 (se aplicável)"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2"><strong>Qtd. Consumida (neste doc):</strong> {material.quantity}</p>
+                    </div>
+                  ))}
+                  {(!doc.extractedData || doc.extractedData.materialsUsed.length === 0) && (
+                    <p className="text-sm text-slate-500 italic text-center py-2">Nenhum material extraído para este documento.</p>
+                  )}
+                </div>
+              ))}
+            </section>
+          ))}
+          {/* Botões de ação fixos ao final da coluna de dados/correção */}
+          <div className="mt-8 pt-6 border-t border-gray-200 space-y-3 md:space-y-0 md:flex md:flex-row md:justify-center md:space-x-4 items-center">
+            <button
+              onClick={onGoBack}
+              className={purpleGradientLight}
+            >
+              {UI_TEXT.backToDocumentManagementButton}
+            </button>
+            <button
+              onClick={onSkip}
+              className={purpleGradientSecondary}
+            >
+              {UI_TEXT.skipCorrectionsButton}
+            </button>
+            <button
+              onClick={handleSubmitCorrections}
+              className={purpleGradientPrimary}
+            >
+              {UI_TEXT.saveCorrectionsButton}
+            </button>
+          </div>
         </div>
       </div>
+      {/* Modal de visualização do documento */}
+      {viewingDocument && (
+        <Modal isOpen={!!viewingDocument} onClose={handleCloseViewDocumentModal}>
+          <div className="p-6 max-w-2xl">
+            <h2 className="text-xl font-bold text-indigo-700 mb-4">Visualização do Documento</h2>
+            <div className="mb-2 text-sm text-slate-600"><strong>Arquivo:</strong> {viewingDocument.fileName}</div>
+            <pre className="bg-gray-100 rounded p-4 text-xs text-slate-800 overflow-x-auto max-h-96">
+              {JSON.stringify(viewingDocument.extractedData, null, 2)}
+            </pre>
+            <button
+              onClick={handleCloseViewDocumentModal}
+              className="mt-4 px-6 py-2 rounded bg-gradient-to-br from-gray-500 to-gray-700 text-white font-semibold shadow hover:from-gray-600 hover:to-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            >Fechar</button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
