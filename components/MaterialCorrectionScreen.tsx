@@ -233,20 +233,19 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
               placeholder="Buscar paciente..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border-none shadow focus:ring-2 focus:ring-purple-400 text-base font-medium text-slate-800 placeholder:text-slate-400"
-              style={{background: 'rgba(255,255,255,0.95)'}}
+              className="w-full px-4 py-2 rounded-lg border-none shadow focus:ring-2 focus:ring-purple-400 text-base font-medium text-slate-800 placeholder:text-slate-400 bg-white"
             />
           </div>
           <div className="flex-1 overflow-y-auto px-2 pb-4">
             {filteredPatientGroups.length === 0 ? (
-              <p className="text-slate-200 text-base text-center mt-8 font-semibold">Nenhum paciente encontrado.</p>
+              <p className="text-slate-600 text-base text-center mt-8 font-semibold">Nenhum paciente encontrado.</p>
             ) : (
-              <ul className="space-y-1">
+              <ul className="space-y-2">
                 {filteredPatientGroups.map(patientKey => (
                   <li key={patientKey}>
                     <button
-                      className={`w-full text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none focus:ring-2 focus:ring-white/60 tracking-wide text-base shadow-sm
-                        ${patientKey === searchTerm ? 'bg-white text-indigo-700 border-indigo-400 ring-2 ring-indigo-300' : 'bg-indigo-500/10 text-white border-transparent hover:bg-indigo-400/20'}`}
+                      className={`w-full text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none tracking-wide text-base shadow-sm
+                        ${patientKey === searchTerm ? 'bg-indigo-700 text-white border-indigo-900' : 'bg-indigo-500 text-white border-transparent hover:bg-indigo-600'}`}
                       onClick={() => setSearchTerm(patientKey)}
                       style={{letterSpacing: '0.02em'}}
                     >
@@ -267,10 +266,10 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
               {groupedEditableDocs[patientKey]?.map(doc => (
                 <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0">
                   <div className="flex items-center gap-4 mb-2">
-                    <span className="text-slate-500 text-sm font-semibold">{doc.fileName}</span>
+                    <span className="text-slate-700 text-sm font-semibold">{doc.fileName}</span>
                     <button
                       onClick={() => handleViewDocument(doc.id)}
-                      className="ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-gray-500 to-gray-700 text-white text-xs font-bold shadow hover:from-gray-600 hover:to-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      className="ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-xs font-bold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     >Visualizar</button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -356,12 +355,14 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
           <div className="p-6 max-w-2xl">
             <h2 className="text-xl font-bold text-indigo-700 mb-4">Visualização do Documento</h2>
             <div className="mb-2 text-sm text-slate-600"><strong>Arquivo:</strong> {viewingDocument.fileName}</div>
-            <pre className="bg-gray-100 rounded p-4 text-xs text-slate-800 overflow-x-auto max-h-96">
-              {JSON.stringify(viewingDocument.extractedData, null, 2)}
-            </pre>
+            {viewingDocument.imagePreviewUrl ? (
+              <img src={viewingDocument.imagePreviewUrl} alt="Documento" className="w-full max-h-96 object-contain rounded border" />
+            ) : (
+              <div className="text-red-600 font-semibold py-8 text-center">Arquivo não disponível para visualização.</div>
+            )}
             <button
               onClick={handleCloseViewDocumentModal}
-              className="mt-4 px-6 py-2 rounded bg-gradient-to-br from-gray-500 to-gray-700 text-white font-semibold shadow hover:from-gray-600 hover:to-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              className="mt-4 px-6 py-2 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-semibold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             >Fechar</button>
           </div>
         </Modal>
