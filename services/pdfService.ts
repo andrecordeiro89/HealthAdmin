@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import 'jspdf-autotable'; // Import for side effects, patches jsPDF.prototype
 import { ConsolidatedOrderData, SourceDocumentInfoForPdf, ReplenishmentMaterial, GlobalMaterialConsumptionRow } from '../types';
@@ -187,7 +186,7 @@ export const generateConsolidatedOrderPdf = async (orderData: ConsolidatedOrderD
   });
 
   const processedDocsBody = sortedSourceDocuments.map(docEntry => [
-    docEntry.patientName || 'Não Identificado',
+    (docEntry.patientName || 'Não Identificado').toUpperCase(),
     formatDate(docEntry.surgeryDate), 
     docEntry.status === 'success' ? 'Sucesso' : (docEntry.status === 'error' ? 'Erro' : (docEntry.status === 'pending' ? 'Pendente' : (docEntry.status === 'processing' ? 'Processando' : docEntry.status))),
     docEntry.status === 'error' ? (docEntry.errorMessage || 'Detalhe não disponível') : '-'
@@ -238,12 +237,12 @@ export const generateConsolidatedOrderPdf = async (orderData: ConsolidatedOrderD
     const patientNamesForMaterial = mat.sourceDocumentIds
       .map(docId => {
         const docInfo = orderData.sourceDocumentsProcessed.find(d => d.id === docId);
-        return docInfo?.patientName || null; 
+        return docInfo?.patientName ? docInfo.patientName.toUpperCase() : null; 
       })
       .filter((name): name is string => name !== null && name.trim() !== "") 
       .reduce((acc, name) => { 
           if (!acc.includes(name)) {
-              acc.push(titleCase(name)); 
+              acc.push(name); 
           }
           return acc;
       }, [] as string[])

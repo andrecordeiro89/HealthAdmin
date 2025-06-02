@@ -222,6 +222,18 @@ export async function extractOrderDetailsFromText(
         }
     });
 
+    // --- INÍCIO DA LÓGICA DE PRIORIZAÇÃO DE DATA DE CIRURGIA ---
+    if (parsedData && parsedData.surgeryDate) {
+      const currentYear = new Date().getFullYear().toString();
+      // Se houver múltiplas datas separadas por espaço, vírgula ou barra, escolha a que contém o ano atual
+      const possibleDates = parsedData.surgeryDate.split(/\s|,|\//).filter(d => d.match(/\d{4}/));
+      const dateWithCurrentYear = possibleDates.find(d => d.includes(currentYear));
+      if (dateWithCurrentYear) {
+        parsedData.surgeryDate = dateWithCurrentYear;
+      }
+    }
+    // --- FIM DA LÓGICA DE PRIORIZAÇÃO DE DATA DE CIRURGIA ---
+
     return parsedData;
 
   } catch (error) {
