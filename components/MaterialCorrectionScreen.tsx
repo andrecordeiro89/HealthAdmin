@@ -215,27 +215,33 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   const inputClass = "mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-700 text-sm"; 
   const labelClass = "block text-xs font-medium text-slate-500";
 
+  // Layout paisagem aprimorado: gradiente, tipografia, layout fluido
   return (
-    <div className="w-full h-[80vh] flex flex-row bg-white/90 backdrop-blur-md rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+    <div className="w-full h-[80vh] flex flex-row bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-xl shadow-xl border border-gray-200 overflow-hidden font-['Inter','Roboto','Montserrat',sans-serif]">
       {/* Coluna esquerda: Lista de pacientes e busca */}
-      <div className="w-1/3 min-w-[220px] max-w-xs bg-indigo-50 border-r border-indigo-200 p-4 flex flex-col">
-        <input
-          type="text"
-          placeholder="Buscar paciente..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="mb-4 px-3 py-2 rounded border border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
-        />
-        <div className="flex-1 overflow-y-auto">
+      <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0" style={{background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 60%, #A78BFA 100%)'}}>
+        <div className="p-4 pb-2">
+          <input
+            type="text"
+            placeholder="Buscar paciente..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 rounded-lg border-none shadow focus:ring-2 focus:ring-purple-400 text-base font-medium text-slate-800 placeholder:text-slate-400"
+            style={{background: 'rgba(255,255,255,0.95)'}}
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto px-2 pb-4">
           {filteredPatientGroups.length === 0 ? (
-            <p className="text-slate-500 text-sm text-center mt-8">Nenhum paciente encontrado.</p>
+            <p className="text-slate-200 text-base text-center mt-8 font-semibold">Nenhum paciente encontrado.</p>
           ) : (
-            <ul>
+            <ul className="space-y-1">
               {filteredPatientGroups.map(patientKey => (
-                <li key={patientKey} className="mb-2">
+                <li key={patientKey}>
                   <button
-                    className={`w-full text-left px-3 py-2 rounded-lg font-semibold transition border border-transparent hover:bg-indigo-100 focus:bg-indigo-200 ${patientKey === searchTerm ? 'bg-indigo-200 border-indigo-400' : ''}`}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none focus:ring-2 focus:ring-white/60 tracking-wide text-base shadow-sm
+                      ${patientKey === searchTerm ? 'bg-white text-indigo-700 border-indigo-400 ring-2 ring-indigo-300' : 'bg-indigo-500/10 text-white border-transparent hover:bg-indigo-400/20'}`}
                     onClick={() => setSearchTerm(patientKey)}
+                    style={{letterSpacing: '0.02em'}}
                   >
                     {patientKey}
                   </button>
@@ -246,171 +252,94 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
         </div>
       </div>
       {/* Coluna direita: Dados e correções do paciente selecionado */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        <div className="w-full max-w-3xl mx-auto bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-xl border border-gray-200">
-          <div className="mb-4 flex flex-col sm:flex-row sm:justify-between items-center text-center gap-2">
-            <span className="text-indigo-700 font-semibold text-lg">
-              {`Total de documentos: ${totalDocs}`}
-            </span>
-            <span className="text-green-700 font-semibold">
-              {`Processados com sucesso: ${totalDocsProcessados}`}
-            </span>
-            <span className="text-red-600 font-semibold">
-              {`Com erro: ${totalDocsErro}`}
-            </span>
-          </div>
-          {docsComErro.length > 0 && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md shadow-sm">
-              <div className="flex items-center mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 text-red-600 mr-2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-red-700 font-semibold">Documentos com erro no processamento:</span>
-              </div>
-              <ul className="list-disc list-inside text-red-700 text-sm mb-2">
-                {docsComErro.map(doc => (
-                  <li key={doc.id}>{doc.fileName} <span className="text-xs text-red-500 font-semibold">(erro)</span></li>
-                ))}
-              </ul>
-              <button
-                className="mt-2 px-4 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700 transition"
-                onClick={() => onRetryErroredDocuments && onRetryErroredDocuments()}
-              >
-                Tentar novamente processar documentos com erro
-              </button>
-            </div>
-          )}
-          <h2 className="text-xl sm:text-2xl font-bold text-indigo-600 mb-2 text-center"> 
-            {UI_TEXT.aiCorrectionScreenTitle}
-          </h2>
-          <p className="text-sm text-slate-500 text-center mb-4 px-4">
-            {aiCorrectionScreenIntroUpdated(hospitalName)}
-          </p>
-
-          <div className="my-4 p-3 sm:p-4 bg-indigo-50 border border-indigo-200 rounded-md shadow-sm flex items-start"> 
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 text-indigo-600 mr-3 flex-shrink-0"> 
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-            </svg>
-            <p className="text-sm text-indigo-700 font-medium"> 
-                {UI_TEXT.aiCorrectionFeedbackNote}
-            </p>
-          </div>
-
-          <div className="space-y-6 mb-6 max-h-[calc(65vh-5rem)] overflow-y-auto pr-2 custom-scrollbar">
-            {filteredPatientGroups.map(patientKey => (
-              <div key={patientKey} className="bg-gray-100 p-3 sm:p-4 rounded-lg shadow-md border border-gray-300">
-                <h3 className="text-lg font-semibold text-indigo-700 mb-3 border-b border-gray-300 pb-2"> 
-                  {patientKey === UI_TEXT.patientGroupHeader(null) && editableDocuments.find(doc => (doc.extractedData?.patientName || UI_TEXT.patientGroupHeader(null)) === patientKey) 
-                    ? (editableDocuments.find(doc => (doc.extractedData?.patientName || UI_TEXT.patientGroupHeader(null)) === patientKey)?.extractedData?.patientName || UI_TEXT.patientGroupHeader(null)) 
-                    : patientKey
-                  }
-                </h3>
-                {groupedEditableDocs[patientKey]?.map(doc => {
-                  const originalDocForComparison = successfullyProcessedOriginalDocs.find(od => od.id === doc.id);
-                  return (
-                    <div key={doc.id} className="mb-4 p-3 bg-white rounded-md shadow border border-gray-200">
-                      <div className="flex justify-between items-center mb-3 pb-3 border-b border-gray-200">
-                        <p className="text-sm font-medium text-slate-700 truncate" title={doc.fileName}>{doc.fileName}</p>
-                        <button
-                          onClick={() => handleViewDocument(doc.id)}
-                          className={smallPurpleGradientAction}
-                          aria-label={`${UI_TEXT.viewDocumentButtonLabel} para ${doc.fileName}`}
-                        >
-                          {UI_TEXT.viewDocumentButtonLabel}
-                        </button>
+      <div className="flex-1 p-8 overflow-y-auto flex flex-col gap-8">
+        {/* Mantém o restante do conteúdo da tela, mas só mostra para o paciente selecionado */}
+        {filteredPatientGroups.map(patientKey => (
+          <section key={patientKey} className="mb-8">
+            <h3 className="text-2xl font-extrabold text-indigo-700 mb-4 tracking-wide border-b-2 border-indigo-100 pb-2 uppercase">{patientKey}</h3>
+            {groupedEditableDocs[patientKey]?.map(doc => (
+              <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0">
+                <div className="flex items-center gap-4 mb-2">
+                  <span className="text-slate-500 text-sm font-semibold">{doc.fileName}</span>
+                  <button
+                    onClick={() => handleViewDocument(doc.id)}
+                    className="ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-purple-500 to-indigo-600 text-white text-xs font-bold shadow hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  >Visualizar</button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Nome do Paciente (Extraído pela IA):</label>
+                    <div className="text-base font-bold text-indigo-800 mb-2">{doc.extractedData?.patientName || 'N/A'}</div>
+                    <label className="block text-xs font-semibold text-indigo-600 mb-1">Sua Correção / Confirmação:</label>
+                    <input
+                      type="text"
+                      value={doc.extractedData?.patientName || ''}
+                      onChange={e => handlePatientNameChange(doc.id, e.target.value)}
+                      className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-4"
+                      placeholder="Corrija o nome do paciente"
+                    />
+                  </div>
+                  <div>
+                    {/* Espaço reservado para possíveis dados adicionais do paciente */}
+                  </div>
+                </div>
+                {doc.extractedData?.materialsUsed.map((material, index) => (
+                  <div key={index} className="mt-6 p-4 rounded-lg bg-gradient-to-br from-white via-indigo-50 to-purple-50 border border-indigo-100 shadow-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="text-sm font-bold text-indigo-600 mb-1">Extraído pela IA:</h4>
+                        <p className="text-xs text-slate-500 mb-1">Descrição do Material: <span className="font-semibold text-slate-700">{material.description}</span></p>
+                        <p className="text-xs text-slate-500 mb-1">Código do Material (se aplicável): <span className="font-semibold text-slate-700">{material.code || 'N/A'}</span></p>
                       </div>
-
-                      {/* Patient Name Editing Section */}
-                      <div className="mb-4">
-                         <p className={`${labelClass} mb-0.5`}>
-                            {aiExtractedPatientNameLabel} <span className="text-slate-700 font-medium">{originalDocForComparison?.extractedData?.patientName || 'N/A'}</span>
-                         </p>
-                         <label htmlFor={`patientName-${doc.id}`} className={`${labelClass} text-indigo-600 font-semibold`}>{UI_TEXT.yourCorrectionLabel} ({patientNameLabel})</label> 
-                         <input
-                            type="text"
-                            id={`patientName-${doc.id}`}
-                            value={doc.extractedData?.patientName || ''}
-                            onChange={(e) => handlePatientNameChange(doc.id, e.target.value)}
-                            className={inputClass}
-                            placeholder="Corrija o nome do paciente"
+                      <div>
+                        <h4 className="text-sm font-bold text-indigo-600 mb-1">Sua Correção / Confirmação:</h4>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Descrição do Material</label>
+                        <input
+                          type="text"
+                          value={material.description}
+                          onChange={e => handleMaterialChange(doc.id, index, 'description', e.target.value)}
+                          className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
+                        />
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Código do Material (se aplicável)</label>
+                        <input
+                          type="text"
+                          value={material.code || ''}
+                          onChange={e => handleMaterialChange(doc.id, index, 'code', e.target.value)}
+                          className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700"
+                          placeholder="Ex: P-205 (se aplicável)"
                         />
                       </div>
-                      
-                      {doc.extractedData?.materialsUsed.map((material, index) => {
-                        const originalMaterial = originalDocForComparison?.extractedData?.materialsUsed[index];
-                        return (
-                          <div key={index} className="py-3 border-t border-gray-200 first-of-type:border-t-0"> {/* Use first-of-type for materials only */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-                              <div>
-                                <h4 className="text-sm font-semibold text-indigo-600 mb-1">{UI_TEXT.aiExtractedLabel}</h4> 
-                                <p className={labelClass}>
-                                  {UI_TEXT.materialDescriptionLabel}: <span className="text-slate-700 font-medium">{originalMaterial?.description || 'N/A'}</span>
-                                </p>
-                                <p className={labelClass}>
-                                  {UI_TEXT.materialCodeLabel}: <span className="text-slate-700 font-medium">{originalMaterial?.code || 'N/A'}</span>
-                                </p>
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-semibold text-indigo-600 mb-1">{UI_TEXT.yourCorrectionLabel}</h4> 
-                                <div>
-                                  <label htmlFor={`desc-${doc.id}-${index}`} className={labelClass}>{UI_TEXT.materialDescriptionLabel}</label>
-                                  <input
-                                    type="text"
-                                    id={`desc-${doc.id}-${index}`}
-                                    value={material.description}
-                                    onChange={(e) => handleMaterialChange(doc.id, index, 'description', e.target.value)}
-                                    className={inputClass}
-                                  />
-                                </div>
-                                <div className="mt-2">
-                                  <label htmlFor={`code-${doc.id}-${index}`} className={labelClass}>{UI_TEXT.materialCodeLabel}</label>
-                                  <input
-                                    type="text"
-                                    id={`code-${doc.id}-${index}`}
-                                    value={material.code || ''}
-                                    onChange={(e) => handleMaterialChange(doc.id, index, 'code', e.target.value)}
-                                    className={inputClass}
-                                    placeholder="Ex: P-205 (se aplicável)"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            <p className="text-xs text-slate-500 mt-2">
-                                <strong>Qtd. Consumida (neste doc):</strong> {material.quantity}
-                            </p>
-                          </div>
-                        );
-                      })}
-                      {(!doc.extractedData || doc.extractedData.materialsUsed.length === 0) && (
-                        <p className="text-sm text-slate-500 italic text-center py-2">Nenhum material extraído para este documento.</p>
-                      )}
                     </div>
-                  );
-                })}
+                    <p className="text-xs text-slate-500 mt-2"><strong>Qtd. Consumida (neste doc):</strong> {material.quantity}</p>
+                  </div>
+                ))}
+                {(!doc.extractedData || doc.extractedData.materialsUsed.length === 0) && (
+                  <p className="text-sm text-slate-500 italic text-center py-2">Nenhum material extraído para este documento.</p>
+                )}
               </div>
             ))}
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-gray-200 space-y-3 md:space-y-0 md:flex md:flex-row md:justify-center md:space-x-4 items-center">
-             <button
-              onClick={onGoBack}
-              className={purpleGradientLight}
-            >
-              {UI_TEXT.backToDocumentManagementButton}
-            </button>
-            <button
-              onClick={onSkip}
-              className={purpleGradientSecondary}
-            >
-              {UI_TEXT.skipCorrectionsButton}
-            </button>
-            <button
-              onClick={handleSubmitCorrections}
-              className={purpleGradientPrimary}
-            >
-              {UI_TEXT.saveCorrectionsButton}
-            </button>
-          </div>
+          </section>
+        ))}
+        {/* Botões de ação fixos ao final da coluna de dados/correção */}
+        <div className="mt-8 pt-6 border-t border-gray-200 space-y-3 md:space-y-0 md:flex md:flex-row md:justify-center md:space-x-4 items-center">
+          <button
+            onClick={onGoBack}
+            className={purpleGradientLight}
+          >
+            {UI_TEXT.backToDocumentManagementButton}
+          </button>
+          <button
+            onClick={onSkip}
+            className={purpleGradientSecondary}
+          >
+            {UI_TEXT.skipCorrectionsButton}
+          </button>
+          <button
+            onClick={handleSubmitCorrections}
+            className={purpleGradientPrimary}
+          >
+            {UI_TEXT.saveCorrectionsButton}
+          </button>
         </div>
       </div>
     </div>
