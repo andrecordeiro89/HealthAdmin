@@ -722,6 +722,53 @@ const App: React.FC = () => {
   const redGradientDestructive = "text-white font-semibold py-2 px-4 rounded-lg shadow-lg bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 focus:ring-offset-white transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out disabled:opacity-60 disabled:saturate-50 disabled:cursor-not-allowed disabled:transform-none";
   const modalPurpleGradientLight = purpleGradientLight.replace("w-full ", ""); // for modal buttons not needing full width
 
+  // Função para retry de documentos com erro
+  const handleRetryErroredDocuments = useCallback(async () => {
+    const erroredDocs = documents.filter(doc => doc.status === 'error');
+    if (erroredDocs.length === 0) return;
+
+    setAppState(AppState.PROCESSING_DOCUMENTS);
+    setAlert({ message: `Reprocessando ${erroredDocs.length} documento(s) com erro...`, type: AlertType.Info });
+
+    let updatedDocs = [...documents];
+    // Retry em batches de 3
+    const retriedResults = await processInBatches(erroredDocs, 3, async (doc) => {
+      updatedDocs = updatedDocs.map(d => d.id === doc.id ? { ...d, status: 'processing' } : d);
+      setDocuments([...updatedDocs]);
+      try {
+        const imagePart = await fileToGenerativePart(doc.file);
+        const data = await extractOrderDetailsFromText(undefined, imagePart.data, imagePart.mimeType, undefined);
+        return { ...doc, status: 'success' as const, extractedData: data, errorMessage: null };
+      } catch (error) {
+        console.error(`Retry error processing ${doc.fileName}:`, error);
+        return { ...doc, status: 'error' as const, errorMessage: (error as Error).message || UI_TEXT.generalErrorProcessing };
+      }
+    });
+
+    updatedDocs = documents.map(doc => {
+      const retriedVersion = retriedResults.find(p => p.id === doc.id);
+      return retriedVersion || doc;
+    }).sort((a, b) => a.fileName.localeCompare(b.fileName));
+
+    setDocuments(updatedDocs);
+
+    const anySuccess = retriedResults.some(d => d.status === 'success');
+    const anyError = retriedResults.some(d => d.status === 'error');
+    const successCount = retriedResults.filter(d => d.status === 'success').length;
+    const errorCount = retriedResults.filter(d => d.status === 'error').length;
+
+    if (anySuccess) {
+      setAlert({ message: `Retry concluído. ${successCount} documento(s) processados com sucesso, ${errorCount} ainda com erro.`, type: AlertType.Success });
+      setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
+    } else if (anyError && !anySuccess) {
+      setAlert({ message: "Todos os documentos ainda falharam ao processar. Verifique os detalhes.", type: AlertType.Error });
+      setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
+    } else {
+      setAlert({ message: "Nenhum documento foi reprocessado.", type: AlertType.Info });
+      setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
+    }
+  }, [documents]);
+
   const renderContent = () => {
     switch (appState) {
       case AppState.SELECTING_HOSPITAL:
@@ -767,6 +814,7 @@ const App: React.FC = () => {
                 onConfirmCorrections={handleConfirmMaterialCorrections} 
                 onSkip={handleSkipMaterialCorrections}
                 onGoBack={() => setAppState(AppState.MANAGING_DOCUMENTS)}
+                onRetryErroredDocuments={handleRetryErroredDocuments}
             />
         );
       case AppState.REVIEW_AND_EDIT:

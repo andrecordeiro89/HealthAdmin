@@ -13,6 +13,7 @@ interface MaterialCorrectionScreenProps {
   ) => void;
   onSkip: () => void;
   onGoBack: () => void; // To go back to Document Management
+  onRetryErroredDocuments?: () => void;
 }
 
 interface GroupedEditableDocuments {
@@ -26,6 +27,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   onConfirmCorrections,
   onSkip,
   onGoBack,
+  onRetryErroredDocuments,
 }) => {
   const [editableDocuments, setEditableDocuments] = useState<ProcessedDocumentEntry[]>([]);
   const [viewingDocument, setViewingDocument] = useState<ProcessedDocumentEntry | null>(null);
@@ -179,6 +181,8 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   const smallPurpleGradientAction = "ml-2 text-xs font-medium py-1 px-2.5 rounded-md shadow-sm bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-offset-white focus:ring-indigo-500 transition-all duration-150 ease-in-out";
   const modalPurpleGradientLight = purpleGradientLight.replace("w-full md:w-auto ", "");
 
+  // Lista de arquivos com erro
+  const docsComErro = processedDocuments.filter(doc => doc.status === 'error');
 
   if (successfullyProcessedOriginalDocs.length === 0) {
     return (
@@ -219,6 +223,27 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
           {`Com erro: ${totalDocsErro}`}
         </span>
       </div>
+      {docsComErro.length > 0 && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md shadow-sm">
+          <div className="flex items-center mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 text-red-600 mr-2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-red-700 font-semibold">Documentos com erro no processamento:</span>
+          </div>
+          <ul className="list-disc list-inside text-red-700 text-sm mb-2">
+            {docsComErro.map(doc => (
+              <li key={doc.id}>{doc.fileName} {doc.errorMessage && <span className="text-xs text-slate-500">({doc.errorMessage})</span>}</li>
+            ))}
+          </ul>
+          <button
+            className="mt-2 px-4 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700 transition"
+            onClick={() => onRetryErroredDocuments && onRetryErroredDocuments()}
+          >
+            Tentar novamente processar documentos com erro
+          </button>
+        </div>
+      )}
       <h2 className="text-xl sm:text-2xl font-bold text-indigo-600 mb-2 text-center"> 
         {UI_TEXT.aiCorrectionScreenTitle}
       </h2>
