@@ -32,6 +32,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   const [editableDocuments, setEditableDocuments] = useState<ProcessedDocumentEntry[]>([]);
   const [viewingDocument, setViewingDocument] = useState<ProcessedDocumentEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [zoomed, setZoomed] = useState(false);
 
   // Placeholders for UI_TEXT that would be in constants.ts
   const patientNameLabel = "Nome do Paciente";
@@ -345,19 +346,35 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
       </div>
       {/* Modal de visualização do documento */}
       {viewingDocument && (
-        <Modal isOpen={!!viewingDocument} onClose={handleCloseViewDocumentModal}>
+        <Modal isOpen={!!viewingDocument} onClose={() => { setZoomed(false); handleCloseViewDocumentModal(); }}>
           <div className="p-6 max-w-3xl">
             <h2 className="text-xl font-bold text-indigo-700 mb-4">Visualização do Documento</h2>
             <div className="mb-2 text-sm text-slate-600"><strong>Arquivo:</strong> {viewingDocument.fileName}</div>
             {viewingDocument.imagePreviewUrl ? (
-              <div className="overflow-auto border rounded bg-gray-50" style={{maxHeight: '80vh', maxWidth: '100%'}}>
-                <img src={viewingDocument.imagePreviewUrl} alt="Documento" style={{display: 'block', margin: '0 auto'}} />
+              <div className="overflow-auto border rounded bg-gray-50 flex justify-center items-center" style={{maxHeight: '80vh', maxWidth: '100%'}}>
+                <img
+                  src={viewingDocument.imagePreviewUrl}
+                  alt="Documento"
+                  style={{
+                    cursor: 'zoom-in',
+                    transition: 'transform 0.3s',
+                    maxWidth: zoomed ? 'none' : '100%',
+                    maxHeight: zoomed ? 'none' : '70vh',
+                    width: zoomed ? 'auto' : '100%',
+                    height: zoomed ? 'auto' : 'auto',
+                    transform: zoomed ? 'scale(2)' : 'scale(1)',
+                    boxShadow: zoomed ? '0 0 0 4px #6366F1' : 'none',
+                    zIndex: 10,
+                  }}
+                  onClick={() => setZoomed(z => !z)}
+                  title={zoomed ? 'Clique para reduzir' : 'Clique para ampliar'}
+                />
               </div>
             ) : (
               <div className="text-red-600 font-semibold py-8 text-center">Arquivo não disponível para visualização.</div>
             )}
             <button
-              onClick={handleCloseViewDocumentModal}
+              onClick={() => { setZoomed(false); handleCloseViewDocumentModal(); }}
               className="mt-4 px-6 py-2 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-semibold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             >Fechar</button>
           </div>
