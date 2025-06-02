@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { CorrectedMaterialItem, ProcessedDocumentEntry, MaterialUsed } from '../types';
 import { UI_TEXT } from '../constants';
@@ -41,6 +39,10 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   const successfullyProcessedOriginalDocs = useMemo(() => {
     return processedDocuments.filter(doc => doc.status === 'success' && doc.extractedData);
   }, [processedDocuments]);
+
+  const totalDocsProcessados = successfullyProcessedOriginalDocs.length;
+  const totalDocsErro = processedDocuments.filter(doc => doc.status === 'error').length;
+  const totalDocs = processedDocuments.length;
 
   useEffect(() => {
     // Initialize editableDocuments with a deep copy of successfully processed documents
@@ -205,7 +207,18 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
 
   return (
     <>
-    <div className="w-full max-w-5xl mx-auto bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-xl shadow-xl border border-gray-200">
+    <div className="w-full max-w-3xl mx-auto bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-xl border border-gray-200">
+      <div className="mb-4 flex flex-col sm:flex-row sm:justify-between items-center text-center gap-2">
+        <span className="text-indigo-700 font-semibold text-lg">
+          {`Total de documentos: ${totalDocs}`}
+        </span>
+        <span className="text-green-700 font-semibold">
+          {`Processados com sucesso: ${totalDocsProcessados}`}
+        </span>
+        <span className="text-red-600 font-semibold">
+          {`Com erro: ${totalDocsErro}`}
+        </span>
+      </div>
       <h2 className="text-xl sm:text-2xl font-bold text-indigo-600 mb-2 text-center"> 
         {UI_TEXT.aiCorrectionScreenTitle}
       </h2>

@@ -25,6 +25,17 @@ const OBSERVATION_KEYWORDS = [
   'contaminado', 'alterado', 'danificado', 'espanado', 'estragado', 'não utilizado', 'nao utilizado', 'defeito', 'quebrado', 'não implantado', 'nao implantado'
 ];
 
+// Função utilitária para processamento em batches
+async function processInBatches<T, R>(items: T[], batchSize: number, processFn: (item: T) => Promise<R>): Promise<R[]> {
+  let results: R[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(processFn));
+    results = results.concat(batchResults);
+  }
+  return results;
+}
+
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.SELECTING_HOSPITAL);
   const [hospitalOptions, setHospitalOptions] = useState<HospitalOption[]>(INITIAL_HOSPITAL_OPTIONS);
@@ -221,7 +232,7 @@ const App: React.FC = () => {
   const handleProcessAllDocuments = useCallback(async () => {
     if (documents.every(doc => doc.status === 'success' || doc.status === 'error')) {
       if (documents.some(doc => doc.status === 'success')) {
-         setAlert({ message: UI_TEXT.allDocsProcessedOrErrorGoToReview, type: AlertType.Info });
+        setAlert({ message: UI_TEXT.allDocsProcessedOrErrorGoToReview, type: AlertType.Info });
       } else {
         setAlert({ message: "Todos os documentos já foram processados ou resultaram em erro. Nenhum dado para revisar.", type: AlertType.Info });
       }
@@ -232,44 +243,44 @@ const App: React.FC = () => {
     setAlert(null);
 
     let updatedDocs = [...documents];
-
     const docsToProcess = documents.filter(doc => doc.status === 'pending');
-    const processingPromises = docsToProcess.map(async (doc) => {
-        updatedDocs = updatedDocs.map(d => d.id === doc.id ? { ...d, status: 'processing' } : d);
-        setDocuments(updatedDocs); 
-        try {
-          const imagePart = await fileToGenerativePart(doc.file);
-          const data = await extractOrderDetailsFromText(undefined, imagePart.data, imagePart.mimeType, undefined);
-          return { ...doc, status: 'success' as const, extractedData: data, errorMessage: null };
-        } catch (error) {
-          console.error(`Error processing ${doc.fileName}:`, error);
-          return { ...doc, status: 'error' as const, errorMessage: (error as Error).message || UI_TEXT.generalErrorProcessing };
-        }
+
+    // Processamento em batches de 3
+    const processedResults = await processInBatches(docsToProcess, 3, async (doc) => {
+      updatedDocs = updatedDocs.map(d => d.id === doc.id ? { ...d, status: 'processing' } : d);
+      setDocuments([...updatedDocs]);
+      try {
+        const imagePart = await fileToGenerativePart(doc.file);
+        const data = await extractOrderDetailsFromText(undefined, imagePart.data, imagePart.mimeType, undefined);
+        return { ...doc, status: 'success' as const, extractedData: data, errorMessage: null };
+      } catch (error) {
+        console.error(`Error processing ${doc.fileName}:`, error);
+        return { ...doc, status: 'error' as const, errorMessage: (error as Error).message || UI_TEXT.generalErrorProcessing };
+      }
     });
-    
-    const processedResults = await Promise.all(processingPromises);
 
     updatedDocs = documents.map(doc => {
-        const processedVersion = processedResults.find(p => p.id === doc.id);
-        return processedVersion || doc; 
-    }).sort((a,b) => a.fileName.localeCompare(b.fileName));
-    
+      const processedVersion = processedResults.find(p => p.id === doc.id);
+      return processedVersion || doc;
+    }).sort((a, b) => a.fileName.localeCompare(b.fileName));
+
     setDocuments(updatedDocs);
 
     const anySuccess = processedResults.some(d => d.status === 'success');
     const anyError = processedResults.some(d => d.status === 'error');
+    const successCount = processedResults.filter(d => d.status === 'success').length;
+    const errorCount = processedResults.filter(d => d.status === 'error').length;
 
     if (anySuccess) {
-      setAlert({ message: UI_TEXT.processingCompletedGoToCorrection, type: AlertType.Success });
-      setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK); 
+      setAlert({ message: `Processamento concluído. ${successCount} documento(s) com sucesso, ${errorCount} com erro. Revise e corrija os materiais abaixo para aprimorar a IA.`, type: AlertType.Success });
+      setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
     } else if (anyError && !anySuccess) {
       setAlert({ message: "Todos os documentos pendentes falharam ao processar. Verifique os detalhes.", type: AlertType.Error });
       setAppState(AppState.MANAGING_DOCUMENTS);
-    } else { 
+    } else {
       setAlert({ message: "Nenhum documento pendente foi processado.", type: AlertType.Info });
       setAppState(AppState.MANAGING_DOCUMENTS);
     }
-
   }, [documents]);
 
 
