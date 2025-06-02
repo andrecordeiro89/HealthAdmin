@@ -233,7 +233,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
           </div>
           <ul className="list-disc list-inside text-red-700 text-sm mb-2">
             {docsComErro.map(doc => (
-              <li key={doc.id}>{doc.fileName} {doc.errorMessage && <span className="text-xs text-slate-500">({doc.errorMessage})</span>}</li>
+              <li key={doc.id}>{doc.fileName} <span className="text-xs text-red-500 font-semibold">(erro)</span></li>
             ))}
           </ul>
           <button
