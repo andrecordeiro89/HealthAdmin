@@ -238,7 +238,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                 {filteredPatientGroups.map(patientKey => (
                   <li key={patientKey}>
                     <button
-                      className={`w-full text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none tracking-wide text-base shadow-sm
+                      className={`w-[90%] mx-auto text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none tracking-wide text-base shadow-sm
                         ${patientKey === searchTerm ? 'bg-indigo-800 text-white border-indigo-900' : 'bg-indigo-600 text-white border-transparent hover:bg-indigo-700'}`}
                       onClick={() => setSearchTerm(patientKey)}
                       style={{letterSpacing: '0.02em'}}
@@ -346,11 +346,13 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
       {/* Modal de visualização do documento */}
       {viewingDocument && (
         <Modal isOpen={!!viewingDocument} onClose={handleCloseViewDocumentModal}>
-          <div className="p-6 max-w-2xl">
+          <div className="p-6 max-w-3xl">
             <h2 className="text-xl font-bold text-indigo-700 mb-4">Visualização do Documento</h2>
             <div className="mb-2 text-sm text-slate-600"><strong>Arquivo:</strong> {viewingDocument.fileName}</div>
             {viewingDocument.imagePreviewUrl ? (
-              <img src={viewingDocument.imagePreviewUrl} alt="Documento" className="w-full max-h-96 object-contain rounded border" />
+              <div className="overflow-auto border rounded bg-gray-50" style={{maxHeight: '80vh', maxWidth: '100%'}}>
+                <img src={viewingDocument.imagePreviewUrl} alt="Documento" style={{display: 'block', margin: '0 auto'}} />
+              </div>
             ) : (
               <div className="text-red-600 font-semibold py-8 text-center">Arquivo não disponível para visualização.</div>
             )}
