@@ -218,8 +218,14 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   // Layout paisagem aprimorado: gradiente, tipografia, layout fluido
   return (
     <div className="w-full h-[80vh] flex flex-row bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-xl shadow-xl border border-gray-200 overflow-hidden font-['Inter','Roboto','Montserrat',sans-serif]">
+      {/* Mensagem de destaque sobre a importância da correção para IA */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-[60vw] max-w-2xl">
+        <div className="bg-gradient-to-r from-yellow-100 via-yellow-50 to-yellow-200 border-l-4 border-yellow-400 text-yellow-900 text-center text-base font-semibold rounded-lg shadow p-3 mb-4">
+          Sua correção é fundamental para treinar e aprimorar a Inteligência Artificial do sistema. Por favor, revise e ajuste os dados com atenção!
+        </div>
+      </div>
       {/* Coluna esquerda: Lista de pacientes e busca */}
-      <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0" style={{background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 60%, #A78BFA 100%)'}}>
+      <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0" style={{background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 60%, #d1d5db 100%)'}}>
         <div className="p-4 pb-2">
           <input
             type="text"
@@ -263,7 +269,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                   <span className="text-slate-500 text-sm font-semibold">{doc.fileName}</span>
                   <button
                     onClick={() => handleViewDocument(doc.id)}
-                    className="ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-purple-500 to-indigo-600 text-white text-xs font-bold shadow hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    className="ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-gray-500 to-gray-700 text-white text-xs font-bold shadow hover:from-gray-600 hover:to-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
                   >Visualizar</button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
