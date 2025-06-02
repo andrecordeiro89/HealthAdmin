@@ -219,12 +219,6 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   return (
     <div className="relative w-full h-[80vh]">
       <div className="w-full h-full flex flex-row bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-xl shadow-xl border border-gray-200 overflow-hidden font-['Inter','Roboto','Montserrat',sans-serif]">
-        {/* Mensagem de destaque sobre a importância da correção para IA */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-[60vw] max-w-2xl">
-          <div className="bg-gradient-to-r from-yellow-100 via-yellow-50 to-yellow-200 border-l-4 border-yellow-400 text-yellow-900 text-center text-base font-semibold rounded-lg shadow p-3 mb-4">
-            Sua correção é fundamental para treinar e aprimorar a Inteligência Artificial do sistema. Por favor, revise e ajuste os dados com atenção!
-          </div>
-        </div>
         {/* Coluna esquerda: Lista de pacientes e busca */}
         <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%)'}}>
           <div className="p-4 pb-2">
@@ -245,7 +239,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                   <li key={patientKey}>
                     <button
                       className={`w-full text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none tracking-wide text-base shadow-sm
-                        ${patientKey === searchTerm ? 'bg-indigo-700 text-white border-indigo-900' : 'bg-indigo-500 text-white border-transparent hover:bg-indigo-600'}`}
+                        ${patientKey === searchTerm ? 'bg-indigo-800 text-white border-indigo-900' : 'bg-indigo-600 text-white border-transparent hover:bg-indigo-700'}`}
                       onClick={() => setSearchTerm(patientKey)}
                       style={{letterSpacing: '0.02em'}}
                     >
