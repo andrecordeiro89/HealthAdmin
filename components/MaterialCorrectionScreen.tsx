@@ -188,8 +188,10 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   const smallPurpleGradientAction = "ml-2 text-xs font-medium py-1 px-2.5 rounded-md shadow-sm bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-offset-white focus:ring-indigo-500 transition-all duration-150 ease-in-out";
   const modalPurpleGradientLight = purpleGradientLight.replace("w-full md:w-auto ", "");
 
-  // Lista de arquivos com erro
+  // Listas de documentos por status
   const docsComErro = processedDocuments.filter(doc => doc.status === 'error');
+  const docsComSucesso = processedDocuments.filter(doc => doc.status === 'success');
+  const docsPendentes = processedDocuments.filter(doc => doc.status === 'pending' || doc.status === 'processing');
 
   if (successfullyProcessedOriginalDocs.length === 0) {
     return (
@@ -219,6 +221,49 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   // Layout paisagem aprimorado: gradiente, tipografia, layout fluido
   return (
     <div className="relative w-full h-[80vh]">
+      {/* Painel de status dos documentos */}
+      <div className="w-full flex flex-col gap-2 p-4 bg-white/80 border-b border-gray-200 mb-2 z-10">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex-1 min-w-[200px]">
+            <span className="font-bold text-green-700">Processados com sucesso:</span>
+            {docsComSucesso.length > 0 ? (
+              <ul className="list-disc list-inside text-green-700 text-sm mt-1">
+                {docsComSucesso.map(doc => (
+                  <li key={doc.id}>{doc.fileName}</li>
+                ))}
+              </ul>
+            ) : <span className="text-gray-500 text-sm ml-2">Nenhum</span>}
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <span className="font-bold text-red-700">Com erro:</span>
+            {docsComErro.length > 0 ? (
+              <ul className="list-disc list-inside text-red-700 text-sm mt-1">
+                {docsComErro.map(doc => (
+                  <li key={doc.id}>{doc.fileName}</li>
+                ))}
+              </ul>
+            ) : <span className="text-gray-500 text-sm ml-2">Nenhum</span>}
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <span className="font-bold text-yellow-700">Pendentes:</span>
+            {docsPendentes.length > 0 ? (
+              <ul className="list-disc list-inside text-yellow-700 text-sm mt-1">
+                {docsPendentes.map(doc => (
+                  <li key={doc.id}>{doc.fileName}</li>
+                ))}
+              </ul>
+            ) : <span className="text-gray-500 text-sm ml-2">Nenhum</span>}
+          </div>
+        </div>
+        {docsComErro.length > 0 && onRetryErroredDocuments && (
+          <div className="mt-3 flex items-center justify-center">
+            <button
+              onClick={onRetryErroredDocuments}
+              className="px-6 py-2 rounded-lg bg-gradient-to-br from-red-500 to-red-700 text-white font-bold shadow-lg hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 text-base"
+            >Reprocessar documentos com erro</button>
+          </div>
+        )}
+      </div>
       <div className="w-full h-full flex flex-row bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-xl shadow-xl border border-gray-200 overflow-hidden font-['Inter','Roboto','Montserrat',sans-serif]">
         {/* Coluna esquerda: Lista de pacientes e busca */}
         <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%)'}}>
