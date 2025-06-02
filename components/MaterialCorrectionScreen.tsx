@@ -347,11 +347,9 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
       {/* Modal de visualização do documento */}
       {viewingDocument && (
         <Modal isOpen={!!viewingDocument} onClose={handleCloseViewDocumentModal}>
-          <div className="p-6 w-[95vw] h-[95vh] max-w-none max-h-none flex flex-col" style={{minWidth: '600px'}}>
-            <h2 className="text-xl font-bold text-indigo-700 mb-4">Visualização do Documento</h2>
-            <div className="mb-2 text-sm text-slate-600"><strong>Arquivo:</strong> {viewingDocument.fileName}</div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
             {viewingDocument.imagePreviewUrl ? (
-              <div className="flex-1 overflow-auto border rounded bg-gray-50 flex justify-center items-center" style={{minHeight: '0', minWidth: '0'}}>
+              <div className="w-full h-full overflow-auto flex items-center justify-center">
                 <img
                   src={viewingDocument.imagePreviewUrl}
                   alt="Documento"
@@ -360,18 +358,19 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                     margin: '0 auto',
                     width: 'auto',
                     height: 'auto',
-                    maxWidth: 'none',
-                    maxHeight: 'none',
+                    maxWidth: '100vw',
+                    maxHeight: '100vh',
                   }}
                 />
+                <button
+                  onClick={handleCloseViewDocumentModal}
+                  className="fixed top-6 right-8 px-6 py-2 rounded-lg bg-indigo-700 bg-opacity-80 text-white font-bold shadow-lg hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg z-50"
+                  style={{backdropFilter: 'blur(2px)'}}
+                >Fechar</button>
               </div>
             ) : (
-              <div className="text-red-600 font-semibold py-8 text-center">Arquivo não disponível para visualização.</div>
+              <div className="text-red-600 font-semibold py-8 text-center bg-white rounded shadow-lg">Arquivo não disponível para visualização.</div>
             )}
-            <button
-              onClick={handleCloseViewDocumentModal}
-              className="mt-4 px-6 py-2 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-semibold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 self-center"
-            >Fechar</button>
           </div>
         </Modal>
       )}
