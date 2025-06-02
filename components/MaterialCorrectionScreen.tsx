@@ -347,16 +347,16 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
       {/* Modal de visualização do documento */}
       {viewingDocument && (
         <Modal isOpen={!!viewingDocument} onClose={() => { setZoomed(false); handleCloseViewDocumentModal(); }}>
-          <div className="p-6 max-w-3xl">
+          <div className="p-6 max-w-5xl w-[80vw] h-[80vh] flex flex-col" style={{minWidth: '600px'}}>
             <h2 className="text-xl font-bold text-indigo-700 mb-4">Visualização do Documento</h2>
             <div className="mb-2 text-sm text-slate-600"><strong>Arquivo:</strong> {viewingDocument.fileName}</div>
             {viewingDocument.imagePreviewUrl ? (
-              <div className="overflow-auto border rounded bg-gray-50 flex justify-center items-center" style={{maxHeight: '80vh', maxWidth: '100%'}}>
+              <div className="flex-1 overflow-auto border rounded bg-gray-50 flex justify-center items-center" style={{minHeight: '0', minWidth: '0'}}>
                 <img
                   src={viewingDocument.imagePreviewUrl}
                   alt="Documento"
                   style={{
-                    cursor: 'zoom-in',
+                    cursor: zoomed ? 'zoom-out' : 'zoom-in',
                     transition: 'transform 0.3s',
                     maxWidth: zoomed ? 'none' : '100%',
                     maxHeight: zoomed ? 'none' : '70vh',
@@ -365,6 +365,8 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                     transform: zoomed ? 'scale(2)' : 'scale(1)',
                     boxShadow: zoomed ? '0 0 0 4px #6366F1' : 'none',
                     zIndex: 10,
+                    display: 'block',
+                    margin: '0 auto',
                   }}
                   onClick={() => setZoomed(z => !z)}
                   title={zoomed ? 'Clique para reduzir' : 'Clique para ampliar'}
@@ -375,7 +377,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
             )}
             <button
               onClick={() => { setZoomed(false); handleCloseViewDocumentModal(); }}
-              className="mt-4 px-6 py-2 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-semibold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="mt-4 px-6 py-2 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-semibold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 self-center"
             >Fechar</button>
           </div>
         </Modal>
