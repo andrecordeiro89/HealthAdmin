@@ -1,8 +1,7 @@
-
-
-import React from 'react';
+import React, { useState } from 'react';
 import { ConsolidatedOrderData, HospitalOption } from '../types';
 import { UI_TEXT } from '../constants';
+import { tableHeader, tableCell, zebraRow, buttonPrimary, buttonLight, inputBase, buttonSize, cardLarge, sectionGap } from './uiClasses';
 
 interface OrderHistoryScreenProps {
   history: ConsolidatedOrderData[];
@@ -17,6 +16,15 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     onReprintPdf, 
     onBack 
 }) => {
+  const [selectedHospital, setSelectedHospital] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+
+  // Filtro
+  const filteredHistory = history.filter(order => {
+    const hospitalMatch = selectedHospital ? order.hospital === selectedHospital : true;
+    const dateMatch = selectedDate ? order.orderDate === selectedDate : true;
+    return hospitalMatch && dateMatch;
+  });
 
   // getHospitalName now uses the hospitalOptions prop passed from App.tsx
   const getHospitalName = (hospitalId: string): string => {
@@ -38,61 +46,50 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   const purpleGradientLight = "text-purple-700 font-medium py-2 px-4 rounded-lg shadow-sm bg-gradient-to-br from-purple-100 to-indigo-200 hover:from-purple-200 hover:to-indigo-300 border border-purple-300 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-300 focus:ring-offset-white transition-all duration-300 ease-in-out disabled:opacity-70 disabled:cursor-not-allowed";
   const smallPurpleGradientAction = "text-white font-semibold text-xs py-1.5 px-3 rounded-md shadow-sm bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-white focus:ring-indigo-500 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:saturate-50";
 
-
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-xl border border-gray-200">
-      <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-        <h2 className="text-2xl font-bold text-indigo-600">{UI_TEXT.orderHistoryTitle}</h2> 
-        <button
-          onClick={onBack}
-          className={purpleGradientLight}
-        >
-          {UI_TEXT.backToHospitalSelectionFromHistoryButton}
-        </button>
-      </div>
-
-      {history.length === 0 ? (
-        <p className="text-center text-slate-500 py-10">{UI_TEXT.noOrdersInHistory}</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
-            <thead className="bg-gray-50">
+    <div className={"w-full h-full min-h-screen flex flex-col justify-center items-center bg-white/90 backdrop-blur-md rounded-none shadow-none border-none px-16 py-12 "} style={{boxSizing: 'border-box'}}>
+      <div className={"w-full max-w-6xl mx-auto flex flex-col " + cardLarge}>
+        <div className="flex flex-col md:flex-row gap-4 mb-6 items-center justify-between">
+          <div className="flex gap-2 items-center">
+            <label className="text-xs font-medium text-slate-600">Hospital:</label>
+            <select value={selectedHospital} onChange={e => setSelectedHospital(e.target.value)} className={inputBase + " text-sm"}>
+              <option value="">Todos</option>
+              {hospitalOptions.map(h => (
+                <option key={h.id} value={h.id}>{h.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-2 items-center">
+            <label className="text-xs font-medium text-slate-600">Data:</label>
+            <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className={inputBase + " text-sm"} />
+          </div>
+          <button onClick={onBack} className={buttonPrimary + " " + buttonSize}>Voltar</button>
+        </div>
+        <div className={"overflow-x-auto max-h-[60vh] " + sectionGap}>
+          <table className="min-w-full text-sm text-left border border-gray-200">
+            <thead className={tableHeader}>
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  {UI_TEXT.orderIdLabel}
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  {UI_TEXT.hospitalLabel}
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  {UI_TEXT.orderDateLabel}
-                </th>
-                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  {UI_TEXT.actionsLabel}
-                </th>
+                <th className={tableCell}>ID do Pedido</th>
+                <th className={tableCell}>Hospital</th>
+                <th className={tableCell}>Data</th>
+                <th className={tableCell}>Ações</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {history.map((order) => (
-                <tr key={order.orderId} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium">{order.orderId}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{getHospitalName(order.hospital)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{formatDate(order.orderDate)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                    <button
-                      onClick={() => onReprintPdf(order)}
-                      className={smallPurpleGradientAction}
-                      aria-label={`${UI_TEXT.reprintPdfButton} para o pedido ${order.orderId}`}
-                    > 
-                      {UI_TEXT.reprintPdfButton}
-                    </button>
+            <tbody>
+              {filteredHistory.map((order, idx) => (
+                <tr key={order.orderId} className={zebraRow}>
+                  <td className={tableCell}>{order.orderId}</td>
+                  <td className={tableCell}>{hospitalOptions.find(h => h.id === order.hospital)?.name || order.hospital}</td>
+                  <td className={tableCell}>{order.orderDate}</td>
+                  <td className={tableCell}>
+                    <button onClick={() => onReprintPdf(order)} className={buttonLight + " " + buttonSize} title="Reimprimir PDF">Reimprimir PDF</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      )}
+      </div>
     </div>
   );
 };

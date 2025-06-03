@@ -1,6 +1,6 @@
-
-
 import React, { useEffect } from 'react';
+import { modalBase, buttonLight, buttonSize, cardLarge } from './uiClasses';
+import ReactDOM from 'react-dom';
 
 interface ModalProps {
   isOpen: boolean;
@@ -45,47 +45,43 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
     '4xl': 'max-w-4xl',
   };
   
-  const modalCloseIcon = "text-indigo-500 hover:text-indigo-700 p-1 rounded-full hover:bg-indigo-100/70 transition-colors duration-150"; 
+  const modalCloseIcon = "text-indigo-500 hover:text-indigo-700 p-2 rounded-full hover:bg-indigo-100/70 transition-colors duration-150 text-2xl"; 
 
-  return (
+  const modalContent = (
     <>
       <style>{`
         @keyframes modal-scale-in {
-          from { opacity: 0; transform: scale(0.95) translateY(10px); } /* Added translateY */
+          from { opacity: 0; transform: scale(0.95) translateY(10px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
         .animate-modal-scale-in {
           animation: modal-scale-in 0.2s ease-out forwards;
         }
       `}</style>
-      <div 
-          className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 transition-opacity duration-300 backdrop-blur-sm" 
-          onClick={onClose}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={title ? "modal-title" : undefined}
-      >
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" style={{padding: 0, margin: 0}}>
         <div
-          className={`bg-white p-6 rounded-lg shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto text-slate-700 transform transition-all duration-300 scale-95 opacity-0 animate-modal-scale-in border border-gray-200`}
-          onClick={(e) => e.stopPropagation()} 
+          className={`bg-white p-8 rounded-2xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto text-slate-700 animate-modal-scale-in border border-gray-200 relative flex flex-col`}
+          onClick={e => e.stopPropagation()}
+          style={{boxSizing: 'border-box'}}
         >
           {title && (
-            <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
-              <h2 id="modal-title" className="text-xl font-semibold text-indigo-600">{title}</h2> 
-              <button 
-                onClick={onClose} 
-                className={modalCloseIcon}
+            <div className="sticky top-0 z-10 bg-white flex justify-between items-center mb-6 pb-4 border-b border-gray-200" style={{paddingTop: 0}}>
+              <h2 id="modal-title" className="text-2xl font-bold text-indigo-600">{title}</h2>
+              <button
+                onClick={onClose}
+                className="ml-2 text-lg font-bold text-slate-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200 bg-transparent border-none p-0 h-5 w-5 flex items-center justify-center"
                 aria-label="Fechar modal"
+                style={{lineHeight: 1, fontSize: '1.5rem'}}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                ×
               </button>
             </div>
           )}
-          <div>{children}</div>
+          <div className="text-lg w-full flex-1">{children}</div>
         </div>
       </div>
     </>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };

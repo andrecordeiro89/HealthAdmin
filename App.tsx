@@ -881,15 +881,15 @@ const App: React.FC = () => {
 
 
   return (
-    <div className={`min-h-screen flex flex-col ${appBackgroundClass} text-slate-700`}>
+    <div className={`min-h-screen min-w-[1200px] flex flex-col ${appBackgroundClass} text-slate-700 w-full`} style={{width: '100vw'}}>
       <Header title={UI_TEXT.appName} />
-      <main className="flex-grow container mx-auto px-2 sm:px-4 py-6 sm:py-8 w-full">
+      <main className="flex-grow w-full h-full px-0 py-0 flex flex-col">
         {alert && <Alert message={alert.message} type={alert.type} onDismiss={() => setAlert(null)} />}
-        <div className="mt-4">
+        <div className="flex-1 w-full h-full overflow-auto">
           {renderContent()}
         </div>
       </main>
-      <Footer />
+      {appState !== AppState.DATA_CORRECTION_AI_FEEDBACK && <Footer />}
 
       {showEditModal && editingDoc && editingDoc.extractedData && (
         <Modal 

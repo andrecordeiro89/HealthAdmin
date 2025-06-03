@@ -3,6 +3,7 @@ import { CorrectedMaterialItem, ProcessedDocumentEntry, MaterialUsed } from '../
 import { UI_TEXT } from '../constants';
 import { Alert, AlertType } from './Alert';
 import { Modal } from './Modal';
+import { tableHeader, tableCell, zebraRow, buttonPrimary, buttonLight, buttonSecondary, inputBase, buttonSize, cardLarge, cardBase, sectionGap } from './uiClasses';
 
 interface MaterialCorrectionScreenProps {
   hospitalName: string;
@@ -33,6 +34,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   const [viewingDocument, setViewingDocument] = useState<ProcessedDocumentEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [zoomed, setZoomed] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   // Placeholders for UI_TEXT that would be in constants.ts
   const patientNameLabel = "Nome do Paciente";
@@ -193,10 +195,11 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   const docsComSucesso = processedDocuments.filter(doc => doc.status === 'success');
   const docsPendentes = processedDocuments.filter(doc => doc.status === 'pending' || doc.status === 'processing');
 
+  const resumoStatus = `Processados com sucesso: ${docsComSucesso.length} | Com erro: ${docsComErro.length} | Pendentes: ${docsPendentes.length}`;
+
   if (successfullyProcessedOriginalDocs.length === 0) {
     return (
       <div className="w-full max-w-3xl mx-auto bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-xl text-center border border-gray-200">
-        <Alert message={UI_TEXT.noSuccessfullyProcessedDocsForReview} type={AlertType.Info} />
         <div className="mt-6 space-y-3 sm:space-y-0 sm:flex sm:space-x-4 justify-center">
             <button
                 onClick={onGoBack}
@@ -220,51 +223,94 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
 
   // Layout paisagem aprimorado: gradiente, tipografia, layout fluido
   return (
-    <div className="relative w-full h-[80vh]">
-      {/* Painel de status dos documentos */}
-      <div className="w-full flex flex-col gap-2 p-4 bg-white/80 border-b border-gray-200 mb-2 z-10">
-        <div className="flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex-1 min-w-[200px]">
-            <span className="font-bold text-green-700">Processados com sucesso:</span>
-            {docsComSucesso.length > 0 ? (
-              <ul className="list-disc list-inside text-green-700 text-sm mt-1">
-                {docsComSucesso.map(doc => (
-                  <li key={doc.id}>{doc.fileName}</li>
-                ))}
-              </ul>
-            ) : <span className="text-gray-500 text-sm ml-2">Nenhum</span>}
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <span className="font-bold text-red-700">Com erro:</span>
-            {docsComErro.length > 0 ? (
-              <ul className="list-disc list-inside text-red-700 text-sm mt-1">
-                {docsComErro.map(doc => (
-                  <li key={doc.id}>{doc.fileName}</li>
-                ))}
-              </ul>
-            ) : <span className="text-gray-500 text-sm ml-2">Nenhum</span>}
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <span className="font-bold text-yellow-700">Pendentes:</span>
-            {docsPendentes.length > 0 ? (
-              <ul className="list-disc list-inside text-yellow-700 text-sm mt-1">
-                {docsPendentes.map(doc => (
-                  <li key={doc.id}>{doc.fileName}</li>
-                ))}
-              </ul>
-            ) : <span className="text-gray-500 text-sm ml-2">Nenhum</span>}
-          </div>
+    <div className={"relative w-full h-full min-h-screen flex flex-col justify-center items-center bg-white/90 backdrop-blur-md rounded-none shadow-none border-none px-16 py-12 "} style={{boxSizing: 'border-box'}}>
+      {/* Barra compacta centralizada com resumoStatus e botões de detalhes/reprocessar no topo (única instância de Alert) */}
+      <div className="sticky top-0 z-30 w-full flex flex-col items-center" style={{marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0}}>
+        <div className="max-w-3xl w-full mx-auto">
+          <Alert
+            message={resumoStatus}
+            type={docsComErro.length > 0 ? AlertType.Error : AlertType.Success}
+          >
+            <div className="flex flex-row gap-2 items-center justify-end w-full mt-2">
+              <button
+                onClick={() => setShowStatusModal(true)}
+                className={"px-2 py-1 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-xs font-bold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 " + buttonSize}
+                style={{minHeight: '28px', fontSize: '0.82rem'}}
+              >
+                Ver detalhes dos documentos
+              </button>
+              <button
+                onClick={onRetryErroredDocuments}
+                disabled={docsComErro.length === 0}
+                className={"px-2 py-1 rounded bg-gradient-to-br from-red-500 to-red-700 text-white text-xs font-bold shadow hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed " + buttonSize}
+                style={{minHeight: '28px', fontSize: '0.82rem'}}
+              >
+                Reprocessar documentos com erro
+              </button>
+            </div>
+          </Alert>
+        </div>
+      </div>
+      {/* Linha de botões principais no topo, alinhados à direita */}
+      <div className="w-full max-w-5xl mx-auto flex flex-row gap-4 justify-end items-center mt-6 mb-8 px-2">
+        <button
+          onClick={onGoBack}
+          className={buttonLight + " " + buttonSize}
+          title="Voltar ao gerenciamento de documentos"
+        >
+          {UI_TEXT.backToDocumentManagementButton}
+        </button>
+        <button
+          onClick={onSkip}
+          className={buttonSecondary + " " + buttonSize}
+          title="Pular correção e ir para revisão detalhada"
+        >
+          {UI_TEXT.skipCorrectionsButton}
+        </button>
+        <button
+          onClick={handleSubmitCorrections}
+          className={buttonPrimary + " " + buttonSize}
+          title="Salvar correções e continuar para revisão"
+        >
+          {UI_TEXT.saveCorrectionsButton}
+        </button>
+      </div>
+      {/* Espaço mínimo entre barra/botões e conteúdo principal */}
+      <div style={{height: '8px'}} />
+      {/* Modal de detalhes técnicos dos documentos */}
+      <Modal isOpen={showStatusModal} onClose={() => setShowStatusModal(false)} title="Detalhes dos Documentos Processados" size="2xl">
+        <div className="overflow-x-auto max-h-[60vh]">
+          <table className="min-w-full text-sm text-left border border-gray-200">
+            <thead className="sticky top-0 z-10 bg-gray-100">
+              <tr>
+                <th className={tableHeader}>Arquivo</th>
+                <th className={tableHeader}>Status</th>
+                <th className={tableHeader}>Erro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {processedDocuments.map((doc, idx) => (
+                <tr key={doc.id} className={zebraRow + (doc.status === 'error' ? ' bg-red-50' : doc.status === 'success' ? ' bg-green-50' : ' bg-yellow-50')}>
+                  <td className={tableCell + " font-mono"}>{doc.fileName}</td>
+                  <td className={tableCell + " font-semibold"}>{doc.status === 'success' ? 'Sucesso' : doc.status === 'error' ? 'Erro' : 'Pendente'}</td>
+                  <td className={tableCell + " text-xs text-red-700"}>{doc.errorMessage || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
         {docsComErro.length > 0 && onRetryErroredDocuments && (
-          <div className="mt-3 flex items-center justify-center">
+          <div className="mt-4 flex items-center justify-end">
             <button
               onClick={onRetryErroredDocuments}
-              className="px-6 py-2 rounded-lg bg-gradient-to-br from-red-500 to-red-700 text-white font-bold shadow-lg hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 text-base"
+              className={"px-6 py-2 rounded-lg bg-gradient-to-br from-red-500 to-red-700 text-white font-bold shadow-lg hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 text-base " + buttonSize}
+              title="Tentar novamente processar todos os documentos com erro"
             >Reprocessar documentos com erro</button>
           </div>
         )}
-      </div>
-      <div className="w-full h-full flex flex-row bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-xl shadow-xl border border-gray-200 overflow-hidden font-['Inter','Roboto','Montserrat',sans-serif]">
+        <></>
+      </Modal>
+      <div className={"flex-1 w-full h-full flex flex-row bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-xl shadow-xl border border-gray-200 overflow-hidden font-['Inter','Roboto','Montserrat',sans-serif] " + sectionGap}>
         {/* Coluna esquerda: Lista de pacientes e busca */}
         <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%)'}}>
           <div className="p-4 pb-2">
@@ -273,7 +319,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
               placeholder="Buscar paciente..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border-none shadow focus:ring-2 focus:ring-purple-400 text-base font-medium text-slate-800 placeholder:text-slate-400 bg-white"
+              className={inputBase + " w-full px-4 py-2 text-base font-medium text-slate-800 placeholder:text-slate-400 bg-white"}
             />
           </div>
           <div className="flex-1 overflow-y-auto px-2 pb-4">
@@ -284,10 +330,10 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                 {filteredPatientGroups.map(patientKey => (
                   <li key={patientKey}>
                     <button
-                      className={`w-[90%] mx-auto text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none tracking-wide text-base shadow-sm
-                        ${patientKey === searchTerm ? 'bg-indigo-800 text-white border-indigo-900' : 'bg-indigo-600 text-white border-transparent hover:bg-indigo-700'}`}
+                      className={"w-[90%] mx-auto text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none tracking-wide text-base shadow-sm " + buttonPrimary + " " + buttonSize + (patientKey === searchTerm ? ' bg-indigo-800 text-white border-indigo-900 ring-2 ring-indigo-400' : ' bg-indigo-600 text-white border-transparent hover:bg-indigo-700')}
                       onClick={() => setSearchTerm(patientKey)}
                       style={{letterSpacing: '0.02em'}}
+                      title={patientKey === searchTerm ? 'Paciente selecionado' : 'Selecionar paciente'}
                     >
                       {patientKey}
                     </button>
@@ -298,18 +344,18 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
           </div>
         </div>
         {/* Coluna direita: Dados e correções do paciente selecionado */}
-        <div className="flex-1 p-8 overflow-y-auto flex flex-col gap-8">
+        <div className="flex-1 p-8 overflow-y-auto flex flex-col gap-8 relative">
           {/* Mantém o restante do conteúdo da tela, mas só mostra para o paciente selecionado */}
           {filteredPatientGroups.map(patientKey => (
             <section key={patientKey} className="mb-8">
-              <h3 className="text-2xl font-extrabold text-indigo-700 mb-4 tracking-wide border-b-2 border-indigo-100 pb-2 uppercase">{patientKey}</h3>
+              <h3 className="text-lg font-extrabold text-indigo-700 mb-4 tracking-wide border-b-2 border-indigo-100 pb-2 uppercase">{patientKey}</h3>
               {groupedEditableDocs[patientKey]?.map(doc => (
                 <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0">
                   <div className="flex items-center gap-4 mb-2">
                     <span className="text-slate-700 text-sm font-semibold">{doc.fileName}</span>
                     <button
                       onClick={() => handleViewDocument(doc.id)}
-                      className="ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-xs font-bold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      className={"ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-xs font-bold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 " + buttonSize}
                     >Visualizar</button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -366,55 +412,23 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
               ))}
             </section>
           ))}
-          {/* Botões de ação fixos ao final da coluna de dados/correção */}
-          <div className="mt-8 pt-6 border-t border-gray-200 space-y-3 md:space-y-0 md:flex md:flex-row md:justify-center md:space-x-4 items-center">
-            <button
-              onClick={onGoBack}
-              className={purpleGradientLight}
-            >
-              {UI_TEXT.backToDocumentManagementButton}
-            </button>
-            <button
-              onClick={onSkip}
-              className={purpleGradientSecondary}
-            >
-              {UI_TEXT.skipCorrectionsButton}
-            </button>
-            <button
-              onClick={handleSubmitCorrections}
-              className={purpleGradientPrimary}
-            >
-              {UI_TEXT.saveCorrectionsButton}
-            </button>
-          </div>
         </div>
       </div>
       {/* Modal de visualização do documento */}
       {viewingDocument && (
-        <Modal isOpen={!!viewingDocument} onClose={handleCloseViewDocumentModal}>
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
+        <Modal isOpen={!!viewingDocument} onClose={handleCloseViewDocumentModal} title="Visualização do Documento" size="3xl">
+          <div className="w-full flex items-center justify-center">
             {viewingDocument.imagePreviewUrl ? (
-              <div className="w-full h-full overflow-auto flex items-center justify-center">
-                <img
-                  src={viewingDocument.imagePreviewUrl}
-                  alt="Documento"
-                  style={{
-                    display: 'block',
-                    margin: '0 auto',
-                    width: 'auto',
-                    height: 'auto',
-                    maxWidth: '100vw',
-                    maxHeight: '100vh',
-                  }}
-                />
-                <button
-                  onClick={handleCloseViewDocumentModal}
-                  className="fixed top-6 right-8 px-6 py-2 rounded-lg bg-indigo-700 bg-opacity-80 text-white font-bold shadow-lg hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg z-50"
-                  style={{backdropFilter: 'blur(2px)'}}
-                >Fechar</button>
-              </div>
+              <img
+                src={viewingDocument.imagePreviewUrl}
+                alt="Documento"
+                className="block mx-auto max-w-full max-h-[70vh] rounded shadow border border-gray-200 bg-white"
+                style={{ objectFit: 'contain' }}
+              />
             ) : (
-              <div className="text-red-600 font-semibold py-8 text-center bg-white rounded shadow-lg">Arquivo não disponível para visualização.</div>
+              <div className="text-red-600 font-semibold py-8 text-center bg-white rounded shadow-lg w-full">
+                Arquivo não disponível para visualização.
+              </div>
             )}
           </div>
         </Modal>
