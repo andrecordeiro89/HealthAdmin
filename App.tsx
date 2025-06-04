@@ -466,6 +466,10 @@ const App: React.FC = () => {
             existing.observation += ` | ${filteredObs}`;
           }
         }
+        // Propagar contaminação se algum material for contaminado
+        if (consumedMat.contaminated) {
+          existing.contaminated = true;
+        }
       } else {
         aggregatedMaterials.set(key, {
           description: consumedMat.description,
@@ -476,6 +480,7 @@ const App: React.FC = () => {
           totalConsumedQuantity: consumedMat.quantity,
           replenishQuantity: 0,
           sourceDocumentIds: [consumedMat.sourceDocId],
+          contaminated: consumedMat.contaminated,
         });
       }
     });
@@ -877,71 +882,111 @@ const App: React.FC = () => {
     }
   };
   
-  const appBackgroundClass = "bg-gray-100";
+  // Gradiente suave para fundo premium
+  const appBackgroundClass = "bg-gradient-to-br from-white via-indigo-50 to-purple-50";
+  // Aplica a classe no body dinamicamente para esconder scrollbars do navegador na tela de seleção de hospital
+  React.useEffect(() => {
+    if (appState === AppState.SELECTING_HOSPITAL) {
+      document.body.classList.add('hide-browser-scrollbar');
+      document.documentElement.classList.add('hide-browser-scrollbar');
+    } else {
+      document.body.classList.remove('hide-browser-scrollbar');
+      document.documentElement.classList.remove('hide-browser-scrollbar');
+    }
+    // Cleanup extra: remove ao desmontar
+    return () => {
+      document.body.classList.remove('hide-browser-scrollbar');
+      document.documentElement.classList.remove('hide-browser-scrollbar');
+    };
+  }, [appState]);
 
 
   return (
-    <div className={`min-h-screen min-w-[1200px] flex flex-col ${appBackgroundClass} text-slate-700 w-full`} style={{width: '100vw'}}>
-      <Header title={UI_TEXT.appName} />
-      <main className="flex-grow w-full h-full px-0 py-0 flex flex-col">
-        {alert && <Alert message={alert.message} type={alert.type} onDismiss={() => setAlert(null)} />}
-        <div className="flex-1 w-full h-full overflow-auto">
-          {renderContent()}
-        </div>
-      </main>
-      {appState !== AppState.DATA_CORRECTION_AI_FEEDBACK && <Footer />}
+    <>
+      {/* CSS para esconder scrollbars do navegador no body/html quando necessário */}
+      <style>{`
+        .hide-browser-scrollbar::-webkit-scrollbar { display: none !important; }
+        .hide-browser-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+      `}</style>
+      <div className={`min-h-screen min-w-[1200px] flex flex-col ${appBackgroundClass} text-slate-700 w-full`} style={{width: '100vw'}}>
+        {/* Header só aparece se não for a tela de seleção de hospital */}
+        {appState !== AppState.SELECTING_HOSPITAL && <Header title="HealthAdmin" />}
+        <main className="flex-grow w-full h-full px-0 py-0 flex flex-col">
+          {alert && <Alert message={alert.message} type={alert.type} onDismiss={() => setAlert(null)} />}
+          <div className="flex-1 w-full h-full overflow-auto">
+            {/* Se for a tela de seleção de hospital, mostra logo minimalista centralizado */}
+            {appState === AppState.SELECTING_HOSPITAL ? (
+              <div className="w-full min-h-screen flex flex-col items-center pt-8 select-none" style={{minHeight: '80vh'}}>
+                <div className="flex flex-row items-center justify-center mb-10 mt-2">
+                  <span className="text-3xl sm:text-5xl font-extrabold text-indigo-700 tracking-tight" style={{letterSpacing: '0.01em'}}>
+                    HealthAdmin
+                  </span>
+                  <svg width="48" height="24" viewBox="0 0 48 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-2">
+                    <polyline points="2,12 11,12 15,21 21,3 27,18 32,12 46,12" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                {/* Renderiza o conteúdo normal da tela de seleção de hospital */}
+                {renderContent()}
+              </div>
+            ) : (
+              renderContent()
+            )}
+          </div>
+        </main>
+        {appState !== AppState.DATA_CORRECTION_AI_FEEDBACK && appState !== AppState.MANAGING_DOCUMENTS && appState !== AppState.REVIEW_AND_EDIT && <Footer />}
 
-      {showEditModal && editingDoc && editingDoc.extractedData && (
-        <Modal 
-            isOpen={showEditModal} 
-            onClose={handleCloseEditModal} 
-            title={UI_TEXT.modalTitleEditData(editingDoc.fileName)}
-            size="4xl"
-        >
-          <OrderForm
-            initialData={editingDoc.extractedData}
-            onSubmit={(updatedData) => handleSaveEditedDocument(editingDoc.id, updatedData)}
-            submitButtonText={UI_TEXT.saveChangesButton} 
-          />
-           <div className="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button 
-                    type="button" 
-                    onClick={handleCloseEditModal}
-                    className={modalPurpleGradientLight}
-                >
-                    {UI_TEXT.cancelButton}
-                </button>
-            </div>
-        </Modal>
-      )}
+        {showEditModal && editingDoc && editingDoc.extractedData && (
+          <Modal 
+              isOpen={showEditModal} 
+              onClose={handleCloseEditModal} 
+              title={UI_TEXT.modalTitleEditData(editingDoc.fileName)}
+              size="4xl"
+          >
+            <OrderForm
+              initialData={editingDoc.extractedData}
+              onSubmit={(updatedData) => handleSaveEditedDocument(editingDoc.id, updatedData)}
+              submitButtonText={UI_TEXT.saveChangesButton} 
+            />
+             <div className="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                  <button 
+                      type="button" 
+                      onClick={handleCloseEditModal}
+                      className={modalPurpleGradientLight}
+                  >
+                      {UI_TEXT.cancelButton}
+                  </button>
+              </div>
+          </Modal>
+        )}
 
-      {showRemovePatientConfirmModal && patientGroupKeyToRemove && (
-        <Modal
-            isOpen={showRemovePatientConfirmModal}
-            onClose={handleCloseRemovePatientConfirmModal}
-            title={UI_TEXT.removePatientConfirmTitle}
-            size="md"
-        >
-            <p className="text-slate-600 mb-6">{UI_TEXT.removePatientConfirmMessage(patientGroupKeyToRemove)}</p>
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button
-                    type="button"
-                    onClick={handleCloseRemovePatientConfirmModal}
-                    className={modalPurpleGradientLight}
-                >
-                    {UI_TEXT.cancelButton}
-                </button>
-                <button
-                    type="button"
-                    onClick={handleConfirmRemovePatientGroup}
-                    className={redGradientDestructive}
-                >
-                    {UI_TEXT.confirmRemoveButton}
-                </button>
-            </div>
-        </Modal>
-      )}
-    </div>
+        {showRemovePatientConfirmModal && patientGroupKeyToRemove && (
+          <Modal
+              isOpen={showRemovePatientConfirmModal}
+              onClose={handleCloseRemovePatientConfirmModal}
+              title={UI_TEXT.removePatientConfirmTitle}
+              size="md"
+          >
+              <p className="text-slate-600 mb-6">{UI_TEXT.removePatientConfirmMessage(patientGroupKeyToRemove)}</p>
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                      type="button"
+                      onClick={handleCloseRemovePatientConfirmModal}
+                      className={modalPurpleGradientLight}
+                  >
+                      {UI_TEXT.cancelButton}
+                  </button>
+                  <button
+                      type="button"
+                      onClick={handleConfirmRemovePatientGroup}
+                      className={redGradientDestructive}
+                  >
+                      {UI_TEXT.confirmRemoveButton}
+                  </button>
+              </div>
+          </Modal>
+        )}
+      </div>
+    </>
   );
 };
 

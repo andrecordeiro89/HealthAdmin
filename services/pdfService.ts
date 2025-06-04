@@ -232,8 +232,11 @@ export const generateConsolidatedOrderPdf = async (orderData: ConsolidatedOrderD
   currentY = (doc as any).lastAutoTable.finalY + 10; 
 
 
-  // Materials Table
-  const materialsBody = orderData.materialsToReplenish.map((mat: ReplenishmentMaterial) => {
+  // Separar materiais contaminados e não contaminados
+  const contaminatedMaterials = orderData.materialsToReplenish.filter((mat: ReplenishmentMaterial) => mat.contaminated);
+  const nonContaminatedMaterials = orderData.materialsToReplenish.filter((mat: ReplenishmentMaterial) => !mat.contaminated);
+
+  const buildMaterialsBody = (materials: ReplenishmentMaterial[]) => materials.map((mat: ReplenishmentMaterial) => {
     const patientNamesForMaterial = mat.sourceDocumentIds
       .map(docId => {
         const docInfo = orderData.sourceDocumentsProcessed.find(d => d.id === docId);
@@ -280,7 +283,7 @@ export const generateConsolidatedOrderPdf = async (orderData: ConsolidatedOrderD
   (doc as any).autoTable({
     startY: currentY,
     head: [['Descrição', 'Código', 'LOTE', 'Paciente(s)', 'Qtd. Cons.', 'Qtd. Repor', 'Observação']], 
-    body: materialsBody,
+    body: buildMaterialsBody(nonContaminatedMaterials),
     theme: 'grid',
     headStyles: { fillColor: [41, 128, 185], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9 },
     styles: { fontSize: 7.5, cellPadding: 1.5, overflow: 'linebreak', textColor: [51, 65, 85], cellHeight: 'auto' }, 
@@ -329,6 +332,43 @@ export const generateConsolidatedOrderPdf = async (orderData: ConsolidatedOrderD
     }, 
   });
   currentY = (doc as any).lastAutoTable.finalY + 10;
+
+  // Tabela de Materiais Contaminados
+  if (contaminatedMaterials.length > 0) {
+    if (currentY + 12 > pageHeight - (margin + 30)) {
+      doc.addPage();
+      currentY = actualHeaderEndY;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(220, 38, 38); // Vermelho
+    doc.text("Materiais Contaminados", margin, currentY);
+    currentY += 7;
+    (doc as any).autoTable({
+      startY: currentY,
+      head: [['Descrição', 'Código', 'LOTE', 'Paciente(s)', 'Qtd. Cons.', 'Qtd. Repor', 'Observação']],
+      body: buildMaterialsBody(contaminatedMaterials),
+      theme: 'grid',
+      headStyles: { fillColor: [239, 68, 68], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9 },
+      styles: { fontSize: 7.5, cellPadding: 1.5, overflow: 'linebreak', textColor: [220, 38, 38], cellHeight: 'auto' },
+      columnStyles: {
+        0: { cellWidth: 'auto', minCellWidth: 35 },
+        1: { cellWidth: 18 },
+        2: { cellWidth: 18 },
+        3: { cellWidth: 'auto', minCellWidth: 35, cellHeight: 'auto' },
+        4: { cellWidth: 15, halign: 'center' },
+        5: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+        6: { cellWidth: 'auto', minCellWidth: 25 }
+      },
+      margin: { left: margin, right: margin, top: actualHeaderEndY, bottom: 30 },
+      didDrawPage: (data: any) => {
+        drawPageSpecificHeader();
+        drawPdfFooter(doc, data.pageNumber, (doc as any).internal.getNumberOfPages(), orderData.generationTimestamp, pageWidth, pageHeight, margin);
+      },
+    });
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setTextColor(51, 65, 85); // Reset para cor padrão
+  }
 
   const notesTitle = "Observações Importantes sobre o Processamento de Documentos:";
   const notesContent = [

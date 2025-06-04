@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ProcessedDocumentEntry, MaterialUsed } from '../types'; // Added MaterialUsed
+import { ProcessedDocumentEntry, MaterialUsed, ReplenishmentMaterial } from '../types'; // Added MaterialUsed and ReplenishmentMaterial
 import { UI_TEXT } from '../constants';
 import { Alert, AlertType } from './Alert';
 import { tableHeader, tableCell, zebraRow, buttonPrimary, buttonLight, inputBase, buttonSize, cardLarge, cardBase, sectionGap } from './uiClasses';
@@ -44,7 +44,6 @@ const MaterialsTable: React.FC<{ materials: MaterialUsed[] }> = ({ materials }) 
   );
 };
 
-
 export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
   documents,
   onEditDocument,
@@ -55,9 +54,9 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
 }) => {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  const successfulDocuments = documents.filter(doc => doc.status === 'success' && doc.extractedData);
+  const successfulDocs = documents.filter(doc => doc.status === 'success' && doc.extractedData);
 
-  const groupedDocuments = successfulDocuments.reduce<GroupedDocuments>((acc, doc) => {
+  const groupedDocuments = successfulDocs.reduce<GroupedDocuments>((acc, doc) => {
     const patientName = doc.extractedData?.patientName?.trim();
     const key = patientName || UI_TEXT.patientGroupHeader(null); 
     if (!acc[key]) {
@@ -78,19 +77,61 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
     setExpandedGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }));
   };
 
-  const purpleGradientPrimary = "w-full sm:w-auto flex-grow text-white font-semibold py-2.5 px-5 rounded-lg shadow-lg bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-white transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out disabled:opacity-60 disabled:saturate-50 disabled:cursor-not-allowed disabled:transform-none";
-  const purpleGradientLight = "w-full sm:w-auto flex-grow sm:flex-grow-0 text-purple-700 font-medium py-2.5 px-5 rounded-lg shadow-sm bg-gradient-to-br from-purple-100 to-indigo-200 hover:from-purple-200 hover:to-indigo-300 border border-purple-300 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-300 focus:ring-offset-white transition-all duration-300 ease-in-out disabled:opacity-70 disabled:cursor-not-allowed";
-  const smallPurpleGradientAction = "ml-2 flex-shrink-0 text-xs font-semibold py-1 px-2.5 rounded-md shadow-sm bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-white focus:ring-indigo-500 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:saturate-50";
-  const smallRedGradientDestructiveIcon = "ml-2 p-1.5 rounded-full bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-rose-500 focus:ring-offset-white shadow-sm";
+  // Agrupar materiais de todos os documentos processados
+  const allMaterials: ReplenishmentMaterial[] = [];
+  successfulDocs.forEach(doc => {
+    doc.extractedData?.materialsUsed.forEach(mat => {
+      allMaterials.push({
+        description: mat.description,
+        code: mat.code,
+        lotNumber: mat.lotNumber,
+        observation: mat.observation,
+        quantity: mat.quantity,
+        totalConsumedQuantity: mat.quantity,
+        replenishQuantity: mat.quantity,
+        sourceDocumentIds: [doc.id],
+        contaminated: mat.contaminated,
+        replenishmentSuggestionNote: mat.code ? undefined : 'Sistema: Material não cadastrado na base.'
+      });
+    });
+  });
 
+  // Separar contaminados e não contaminados
+  const contaminatedMaterials = allMaterials.filter(mat => mat.contaminated);
+  const nonContaminatedMaterials = allMaterials.filter(mat => !mat.contaminated);
 
-  if (successfulDocuments.length === 0) {
+  // Agrupar por material (descrição + código + lote)
+  function groupMaterials(materials: ReplenishmentMaterial[]) {
+    const materialMap = new Map<string, ReplenishmentMaterial>();
+    materials.forEach(mat => {
+      const key = `${mat.description.toLowerCase()}|${mat.code || ''}|${mat.lotNumber || ''}`;
+      if (materialMap.has(key)) {
+        const existing = materialMap.get(key)!;
+        existing.totalConsumedQuantity += mat.quantity;
+        existing.replenishQuantity += mat.quantity;
+        if (mat.observation && (!existing.observation || !existing.observation.includes(mat.observation))) {
+          existing.observation = existing.observation ? `${existing.observation} | ${mat.observation}` : mat.observation;
+        }
+        existing.sourceDocumentIds.push(...mat.sourceDocumentIds);
+      } else {
+        materialMap.set(key, { ...mat });
+      }
+    });
+    return Array.from(materialMap.values());
+  }
+  const materialsToShow = groupMaterials(nonContaminatedMaterials);
+  const contaminatedToShow = groupMaterials(contaminatedMaterials);
+
+  // Modal de detalhes dos documentos
+  const [showDocsModal, setShowDocsModal] = useState(false);
+
+  if (successfulDocs.length === 0) {
     return (
       <div className="w-full max-w-3xl mx-auto bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-xl text-center border border-gray-200">
         <Alert message={UI_TEXT.noSuccessfullyProcessedDocsForReview} type={AlertType.Info} />
         <button
           onClick={onGoBack} // This button should lead back to MaterialCorrection or DocManagement
-          className={`mt-6 ${purpleGradientLight.replace("w-full ", "")}`}
+          className={`mt-6 ${buttonLight.replace("w-full ", "")}`}
         > 
           Voltar para Correção/Gerenciamento
         </button>
@@ -99,97 +140,147 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
   }
 
   return (
-    <div className={"w-full h-full min-h-screen flex flex-col justify-center items-center bg-white/90 backdrop-blur-md rounded-none shadow-none border-none px-16 py-12 "} style={{boxSizing: 'border-box'}}>
-      <div className={"w-full max-w-5xl mx-auto flex flex-col items-center " + cardLarge}>
-        <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-1 text-center">{UI_TEXT.reviewExtractedDataTitle}</h2>
-        <p className="text-sm text-slate-500 text-center mb-6">Hospital: {hospitalName}</p>
-        <div className="sticky top-0 z-30 w-full" style={{marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0}}>
-          <Alert message={UI_TEXT.noSuccessfullyProcessedDocsForReview} type={AlertType.Info} />
-        </div>
-        <div style={{height: '8px'}} />
-        <div className={"space-y-3 mb-6 w-full max-h-[60vh] overflow-y-auto pr-2 " + sectionGap}>
-          {patientGroups.map((groupKey, idx) => (
-            <div key={groupKey} className={"rounded-lg shadow-sm border border-gray-200 " + (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50') + " " + cardBase}>
-              <div className="flex justify-between items-center p-4 hover:bg-gray-100/70 rounded-t-lg cursor-pointer" onClick={() => toggleGroup(groupKey)}>
-                <button
-                  className="flex-grow flex justify-between items-center text-left text-slate-700 focus:outline-none"
-                  aria-expanded={!!expandedGroups[groupKey]}
-                  aria-controls={`patient-docs-${groupKey.replace(/\s+/g, '-')}`}
-                  title={expandedGroups[groupKey] ? 'Recolher grupo' : 'Expandir grupo'}
-                >
-                  <span className="font-semibold text-lg">{groupKey} ({groupedDocuments[groupKey].length} doc(s))</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" 
-                       className={`w-6 h-6 transition-transform duration-200 text-slate-400 ${expandedGroups[groupKey] ? 'rotate-180' : ''}`}> 
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onOpenRemovePatientConfirmModal(groupKey);}}
-                  title={UI_TEXT.removePatientGroupButton}
-                  className={smallRedGradientDestructiveIcon + " " + buttonSize}
-                  aria-label={`${UI_TEXT.removePatientGroupButton} para ${groupKey}`}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c1.153 0 2.24.086 3.223.244L6.75 5.79m12.506 0l-2.828-2.828A2.25 2.25 0 0015.025 2.25H8.975a2.25 2.25 0 00-1.591.659L4.558 5.79m3.839 11.25H15.17" />
-                  </svg>
-                </button>
-              </div>
-              {expandedGroups[groupKey] && (
-                <div id={`patient-docs-${groupKey.replace(/\s+/g, '-')}`} className="border-t border-gray-200 p-4 space-y-4">
-                  {groupedDocuments[groupKey].map(doc => (
-                    <div key={doc.id} className="bg-white p-4 rounded-md border border-gray-200 shadow-md flex flex-col gap-2">
-                      <div className="flex justify-between items-start mb-2">
-                        <p className="text-base font-semibold text-indigo-700 truncate flex-grow" title={doc.fileName}>
-                          {doc.fileName}
-                        </p>
-                        <button
-                          onClick={() => onEditDocument(doc.id)}
-                          className={smallPurpleGradientAction + " " + buttonSize}
-                          title="Editar dados extraídos"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-4 h-4 mr-1 inline-block">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                          </svg>
-                          {UI_TEXT.editButtonLabel}
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 mb-2">
-                        <DetailItem label="Paciente" value={doc.extractedData?.patientName} />
-                        <DetailItem label="Data Nasc." value={doc.extractedData?.patientDOB} />
-                        <DetailItem label="Data Cirurgia" value={doc.extractedData?.surgeryDate} />
-                        <DetailItem label="Médico" value={doc.extractedData?.doctorName} />
-                        <div className="md:col-span-2">
-                          <DetailItem label="Procedimento" value={doc.extractedData?.procedureName} />
-                        </div>
-                      </div>
-                      {doc.extractedData?.materialsUsed && (
-                        <MaterialsTable materials={doc.extractedData.materialsUsed} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="mt-8 pt-6 border-t border-gray-200 w-full flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <button
-            onClick={onGoBack}
-            className={buttonLight + " " + buttonSize}
-            title="Voltar para Correção de Materiais"
-          >
-            Voltar para Correção de Materiais
-          </button>
-          <button
-            onClick={onConfirmAndGenerateReport}
-            disabled={successfulDocuments.length === 0}
-            className={buttonPrimary + " " + buttonSize}
-            title="Confirmar dados e gerar relatório PDF"
-          >
-            {UI_TEXT.confirmAndGenerateReportButton}
-          </button>
+    <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-10 px-2">
+      {/* Cabeçalho simulando PDF (sem logo) */}
+      <div className="w-full max-w-4xl mx-auto text-center mb-6 flex flex-col items-center">
+        <h2 className="text-2xl sm:text-3xl font-bold text-indigo-800 mb-1">{hospitalName} <span className="block text-lg font-normal text-slate-500">Relatório de Consumo de Materiais</span></h2>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-slate-600 text-sm mb-1">
+          <span><b>Data:</b> {new Date().toLocaleDateString()}</span>
+          <span>|</span>
+          <span><b>Lote:</b> {successfulDocs.length} documento(s)</span>
         </div>
       </div>
+      {/* Card resumo do lote */}
+      <div className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between bg-white/90 rounded-xl shadow-lg p-4 mb-8 border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <span className="font-semibold text-indigo-700">{hospitalName}</span>
+          <span className="text-slate-400 text-sm">|</span>
+          <span className="text-slate-600">{new Date().toLocaleDateString()}</span>
+          <span className="text-slate-400 text-sm">|</span>
+          <span className="text-slate-600">{successfulDocs.length} documento(s)</span>
+        </div>
+        <button
+          className="ml-0 sm:ml-4 mt-3 sm:mt-0 px-4 py-2 rounded-lg bg-gradient-to-br from-purple-100 to-indigo-200 text-purple-700 font-medium shadow border border-purple-200 hover:from-purple-200 hover:to-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all"
+          onClick={() => setShowDocsModal(true)}
+        >
+          Ver Detalhes dos Documentos
+        </button>
+      </div>
+      {/* Tabela de Materiais Contaminados */}
+      {contaminatedToShow.length > 0 && (
+        <div className="w-full max-w-5xl mx-auto bg-white rounded shadow-xl border-2 border-red-400 overflow-x-auto mb-8">
+          <h3 className="text-lg font-bold text-red-700 px-4 pt-4 pb-2 flex items-center gap-2">
+            <svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6 text-red-500' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth='2'><path strokeLinecap='round' strokeLinejoin='round' d='M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' /></svg>
+            Materiais Contaminados
+          </h3>
+          <table className="min-w-full text-sm text-left">
+            <thead>
+              <tr className="bg-white border-b border-red-200">
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Descrição do Material</th>
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Código</th>
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Lote</th>
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Observação</th>
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Qtd. Consumida</th>
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Qtd. para Reposição</th>
+                <th className="px-4 py-3 font-bold text-red-700">Obs. Sistema</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contaminatedToShow.map((mat, idx) => (
+                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="px-4 py-2 border-r border-red-200 font-medium text-red-800 align-top">{mat.description}</td>
+                  <td className="px-4 py-2 border-r border-red-200 text-red-700 align-top">{mat.code || <span className="italic text-red-400">-</span>}</td>
+                  <td className="px-4 py-2 border-r border-red-200 text-red-700 align-top">{mat.lotNumber || <span className="italic text-red-400">-</span>}</td>
+                  <td className="px-4 py-2 border-r border-red-200 text-red-600 align-top max-w-[200px] truncate" title={mat.observation || ''}>{mat.observation || <span className="italic text-red-400">-</span>}</td>
+                  <td className="px-4 py-2 border-r border-red-200 text-center text-red-700 font-semibold align-top">{mat.totalConsumedQuantity}</td>
+                  <td className="px-4 py-2 border-r border-red-200 text-center text-red-700 font-semibold align-top">{mat.replenishQuantity}</td>
+                  <td className="px-4 py-2 text-xs text-red-600 align-top max-w-[180px] truncate" title={mat.replenishmentSuggestionNote || ''}>{mat.replenishmentSuggestionNote || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {/* Tabela simulando PDF */}
+      <div className="w-full max-w-5xl mx-auto bg-white rounded shadow-xl border border-gray-300 overflow-x-auto mb-8">
+        <table className="min-w-full text-sm text-left">
+          <thead>
+            <tr className="bg-gray-100 border-b border-gray-300">
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Descrição do Material</th>
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Código</th>
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Lote</th>
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Observação</th>
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Qtd. Consumida</th>
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Qtd. para Reposição</th>
+              <th className="px-4 py-3 font-bold text-slate-700">Obs. Sistema</th>
+            </tr>
+          </thead>
+          <tbody>
+            {materialsToShow.length === 0 && (
+              <tr><td colSpan={7} className="text-center text-slate-400 py-6">Nenhum material processado para este lote.</td></tr>
+            )}
+            {materialsToShow.map((mat, idx) => (
+              <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                <td className="px-4 py-2 border-r border-gray-200 font-medium text-slate-700 align-top">{mat.description}</td>
+                <td className="px-4 py-2 border-r border-gray-200 text-slate-600 align-top">{mat.code || <span className="italic text-slate-400">-</span>}</td>
+                <td className="px-4 py-2 border-r border-gray-200 text-slate-600 align-top">{mat.lotNumber || <span className="italic text-slate-400">-</span>}</td>
+                <td className="px-4 py-2 border-r border-gray-200 text-slate-500 align-top max-w-[200px] truncate" title={mat.observation || ''}>{mat.observation || <span className="italic text-slate-400">-</span>}</td>
+                <td className="px-4 py-2 border-r border-gray-200 text-center text-indigo-700 font-semibold align-top">{mat.totalConsumedQuantity}</td>
+                <td className="px-4 py-2 border-r border-gray-200 text-center text-indigo-700 font-semibold align-top">{mat.replenishQuantity}</td>
+                <td className="px-4 py-2 text-xs text-slate-500 align-top max-w-[180px] truncate" title={mat.replenishmentSuggestionNote || ''}>{mat.replenishmentSuggestionNote || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {/* Botões de ação centralizados */}
+      <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-4 justify-center items-center mt-2 mb-8">
+        <button
+          onClick={onGoBack}
+          className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-gradient-to-br from-purple-100 to-indigo-200 text-purple-700 font-medium shadow border border-purple-200 hover:from-purple-200 hover:to-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all"
+        >
+          Voltar para Correção
+        </button>
+        <button
+          onClick={onConfirmAndGenerateReport}
+          disabled={materialsToShow.length === 0}
+          className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-semibold shadow-lg hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          Gerar Relatório PDF
+        </button>
+      </div>
+      {/* Modal de detalhes dos documentos */}
+      {showDocsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 relative">
+            <button
+              className="absolute top-3 right-3 text-slate-400 hover:text-red-500 text-xl font-bold"
+              onClick={() => setShowDocsModal(false)}
+              title="Fechar"
+            >×</button>
+            <h3 className="text-lg font-bold text-indigo-700 mb-4">Detalhes dos Documentos Processados</h3>
+            <div className="max-h-96 overflow-y-auto divide-y divide-gray-200">
+              {successfulDocs.map(doc => (
+                <div key={doc.id} className="py-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-slate-700">{doc.fileName}</span>
+                    <span className="text-xs text-green-700 ml-2">Sucesso</span>
+                  </div>
+                  <div className="flex flex-wrap gap-4 text-xs text-slate-500 mb-1">
+                    <span><b>Paciente:</b> {doc.extractedData?.patientName || '-'}</span>
+                    <span><b>Data Cirurgia:</b> {doc.extractedData?.surgeryDate || '-'}</span>
+                    <span><b>Médico:</b> {doc.extractedData?.doctorName || '-'}</span>
+                  </div>
+                  <button
+                    onClick={() => { setShowDocsModal(false); onEditDocument(doc.id); }}
+                    className="mt-1 px-3 py-1 rounded bg-gradient-to-br from-purple-500 to-indigo-600 text-white text-xs font-bold shadow hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  >Editar Dados</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -59,7 +59,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   const handleMaterialChange = (
     docId: string, 
     materialIndex: number, 
-    field: 'description' | 'code', 
+    field: 'description' | 'code' | 'quantity' | 'lotNumber' | 'observation', 
     value: string
   ) => {
     setEditableDocuments(prevDocs =>
@@ -69,10 +69,42 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
           if (newMaterialsUsed[materialIndex]) {
             newMaterialsUsed[materialIndex] = {
               ...newMaterialsUsed[materialIndex],
-              [field]: value || (field === 'code' ? null : ''), // Handle empty string for code as null
+              [field]: field === 'quantity' ? Number(value) : value || (field === 'code' || field === 'lotNumber' || field === 'observation' ? null : ''),
             };
             return { ...doc, extractedData: { ...doc.extractedData, materialsUsed: newMaterialsUsed } };
           }
+        }
+        return doc;
+      })
+    );
+  };
+
+  const handleAddMaterial = (docId: string) => {
+    setEditableDocuments(prevDocs =>
+      prevDocs.map(doc => {
+        if (doc.id === docId && doc.extractedData) {
+          return {
+            ...doc,
+            extractedData: {
+              ...doc.extractedData,
+              materialsUsed: [
+                ...doc.extractedData.materialsUsed,
+                { description: '', quantity: 1, code: null, lotNumber: null, observation: null },
+              ],
+            },
+          };
+        }
+        return doc;
+      })
+    );
+  };
+
+  const handleRemoveMaterial = (docId: string, materialIndex: number) => {
+    setEditableDocuments(prevDocs =>
+      prevDocs.map(doc => {
+        if (doc.id === docId && doc.extractedData) {
+          const newMaterialsUsed = doc.extractedData.materialsUsed.filter((_, idx) => idx !== materialIndex);
+          return { ...doc, extractedData: { ...doc.extractedData, materialsUsed: newMaterialsUsed } };
         }
         return doc;
       })
@@ -88,6 +120,23 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
             extractedData: {
               ...doc.extractedData,
               patientName: newName || null, // Store empty as null. Removed .trim() to allow spaces during typing.
+            },
+          };
+        }
+        return doc;
+      })
+    );
+  };
+
+  const handlePatientInfoChange = (docId: string, field: string, value: string) => {
+    setEditableDocuments(prevDocs =>
+      prevDocs.map(doc => {
+        if (doc.id === docId && doc.extractedData) {
+          return {
+            ...doc,
+            extractedData: {
+              ...doc.extractedData,
+              [field]: value || null, // Store empty as null. Removed .trim() to allow spaces during typing.
             },
           };
         }
@@ -224,57 +273,6 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   // Layout paisagem aprimorado: gradiente, tipografia, layout fluido
   return (
     <div className={"relative w-full h-full min-h-screen flex flex-col justify-center items-center bg-white/90 backdrop-blur-md rounded-none shadow-none border-none px-16 py-12 "} style={{boxSizing: 'border-box'}}>
-      {/* Barra compacta centralizada com resumoStatus e botões de detalhes/reprocessar no topo (única instância de Alert) */}
-      <div className="sticky top-0 z-30 w-full flex flex-col items-center" style={{marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0}}>
-        <div className="max-w-3xl w-full mx-auto">
-          <Alert
-            message={resumoStatus}
-            type={docsComErro.length > 0 ? AlertType.Error : AlertType.Success}
-          >
-            <div className="flex flex-row gap-2 items-center justify-end w-full mt-2">
-              <button
-                onClick={() => setShowStatusModal(true)}
-                className={"px-2 py-1 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-xs font-bold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 " + buttonSize}
-                style={{minHeight: '28px', fontSize: '0.82rem'}}
-              >
-                Ver detalhes dos documentos
-              </button>
-              <button
-                onClick={onRetryErroredDocuments}
-                disabled={docsComErro.length === 0}
-                className={"px-2 py-1 rounded bg-gradient-to-br from-red-500 to-red-700 text-white text-xs font-bold shadow hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed " + buttonSize}
-                style={{minHeight: '28px', fontSize: '0.82rem'}}
-              >
-                Reprocessar documentos com erro
-              </button>
-            </div>
-          </Alert>
-        </div>
-      </div>
-      {/* Linha de botões principais no topo, alinhados à direita */}
-      <div className="w-full max-w-5xl mx-auto flex flex-row gap-4 justify-end items-center mt-6 mb-8 px-2">
-        <button
-          onClick={onGoBack}
-          className={buttonLight + " " + buttonSize}
-          title="Voltar ao gerenciamento de documentos"
-        >
-          {UI_TEXT.backToDocumentManagementButton}
-        </button>
-        <button
-          onClick={onSkip}
-          className={buttonSecondary + " " + buttonSize}
-          title="Pular correção e ir para revisão detalhada"
-        >
-          {UI_TEXT.skipCorrectionsButton}
-        </button>
-        <button
-          onClick={handleSubmitCorrections}
-          className={buttonPrimary + " " + buttonSize}
-          title="Salvar correções e continuar para revisão"
-        >
-          {UI_TEXT.saveCorrectionsButton}
-        </button>
-      </div>
       {/* Espaço mínimo entre barra/botões e conteúdo principal */}
       <div style={{height: '8px'}} />
       {/* Modal de detalhes técnicos dos documentos */}
@@ -310,9 +308,53 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
         )}
         <></>
       </Modal>
+      {/* Botões flutuantes alinhados à direita no rodapé */}
+      <div className="fixed bottom-6 z-50 pointer-events-none w-full flex justify-end pr-16">
+        <div className="pointer-events-auto flex flex-col md:flex-row gap-2 md:gap-4 items-end md:items-center">
+          <button
+            onClick={onGoBack}
+            className={buttonLight + " " + buttonSize + " shadow-lg"}
+            title="Voltar ao gerenciamento de documentos"
+          >
+            Voltar
+          </button>
+          <button
+            onClick={onSkip}
+            className={buttonSecondary + " " + buttonSize + " shadow-lg"}
+            title="Pular correção e ir para revisão detalhada"
+          >
+            Pular Correção
+          </button>
+          <button
+            onClick={handleSubmitCorrections}
+            className={buttonPrimary + " " + buttonSize + " shadow-lg"}
+            title="Salvar correções e continuar para revisão"
+          >
+            Salvar e Avançar
+          </button>
+        </div>
+      </div>
+      {/* Conteúdo principal da tela */}
       <div className={"flex-1 w-full h-full flex flex-row bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-xl shadow-xl border border-gray-200 overflow-hidden font-['Inter','Roboto','Montserrat',sans-serif] " + sectionGap}>
         {/* Coluna esquerda: Lista de pacientes e busca */}
         <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%)'}}>
+          <div className="flex flex-col gap-2 mb-4 mt-6">
+            <button
+              onClick={() => setShowStatusModal(true)}
+              className={"px-3 py-2 rounded-lg font-bold bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-sm shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 max-w-[210px] mx-auto w-full"}
+              style={{minHeight: '36px'}}
+            >
+              Ver detalhes dos documentos
+            </button>
+            <button
+              onClick={onRetryErroredDocuments}
+              disabled={docsComErro.length === 0}
+              className={"px-3 py-2 rounded-lg font-bold bg-gradient-to-br from-red-500 to-red-700 text-white text-sm shadow hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed max-w-[210px] mx-auto w-full"}
+              style={{minHeight: '36px'}}
+            >
+              Reprocessar documentos com erro
+            </button>
+          </div>
           <div className="p-4 pb-2">
             <input
               type="text"
@@ -326,11 +368,16 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
             {filteredPatientGroups.length === 0 ? (
               <p className="text-slate-600 text-base text-center mt-8 font-semibold">Nenhum paciente encontrado.</p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-3 mt-2">
                 {filteredPatientGroups.map(patientKey => (
                   <li key={patientKey}>
                     <button
-                      className={"w-[90%] mx-auto text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none tracking-wide text-base shadow-sm " + buttonPrimary + " " + buttonSize + (patientKey === searchTerm ? ' bg-indigo-800 text-white border-indigo-900 ring-2 ring-indigo-400' : ' bg-indigo-600 text-white border-transparent hover:bg-indigo-700')}
+                      className={
+                        `w-full text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none tracking-wide text-base shadow-sm ` +
+                        (patientKey === searchTerm
+                          ? 'bg-gradient-to-br from-purple-600 to-indigo-700 text-white border-indigo-900 ring-2 ring-indigo-400'
+                          : 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white border-transparent hover:from-purple-600 hover:to-indigo-700')
+                      }
                       onClick={() => setSearchTerm(patientKey)}
                       style={{letterSpacing: '0.02em'}}
                       title={patientKey === searchTerm ? 'Paciente selecionado' : 'Selecionar paciente'}
@@ -345,69 +392,168 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
         </div>
         {/* Coluna direita: Dados e correções do paciente selecionado */}
         <div className="flex-1 p-8 overflow-y-auto flex flex-col gap-8 relative">
-          {/* Mantém o restante do conteúdo da tela, mas só mostra para o paciente selecionado */}
+          {/* Para cada paciente/documento selecionado, renderize um card editável completo */}
           {filteredPatientGroups.map(patientKey => (
             <section key={patientKey} className="mb-8">
               <h3 className="text-lg font-extrabold text-indigo-700 mb-4 tracking-wide border-b-2 border-indigo-100 pb-2 uppercase">{patientKey}</h3>
               {groupedEditableDocs[patientKey]?.map(doc => (
-                <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0">
+                <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0 bg-white/90 rounded-xl shadow-xl p-6">
                   <div className="flex items-center gap-4 mb-2">
                     <span className="text-slate-700 text-sm font-semibold">{doc.fileName}</span>
-                    <button
-                      onClick={() => handleViewDocument(doc.id)}
-                      className={"ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-xs font-bold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 " + buttonSize}
-                    >Visualizar</button>
+                    {doc.imagePreviewUrl && (
+                      <button
+                        onClick={() => handleViewDocument(doc.id)}
+                        className={"ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-xs font-bold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 " + buttonSize}
+                      >Visualizar</button>
+                    )}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Nome do Paciente (Extraído pela IA):</label>
-                      <div className="text-base font-bold text-indigo-800 mb-2">{doc.extractedData?.patientName || 'N/A'}</div>
-                      <label className="block text-xs font-semibold text-indigo-600 mb-1">Sua Correção / Confirmação:</label>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Nome do Paciente</label>
                       <input
                         type="text"
                         value={doc.extractedData?.patientName || ''}
                         onChange={e => handlePatientNameChange(doc.id, e.target.value)}
-                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-4"
-                        placeholder="Corrija o nome do paciente"
+                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-2"
+                        placeholder="Nome do paciente"
+                      />
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Data de Nascimento</label>
+                      <input
+                        type="text"
+                        value={doc.extractedData?.patientDOB || ''}
+                        onChange={e => handlePatientInfoChange(doc.id, 'patientDOB', e.target.value)}
+                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-2"
+                        placeholder="Data de nascimento"
+                      />
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Data da Cirurgia</label>
+                      <input
+                        type="text"
+                        value={doc.extractedData?.surgeryDate || ''}
+                        onChange={e => handlePatientInfoChange(doc.id, 'surgeryDate', e.target.value)}
+                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-2"
+                        placeholder="Data da cirurgia"
+                      />
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Procedimento</label>
+                      <input
+                        type="text"
+                        value={doc.extractedData?.procedureName || ''}
+                        onChange={e => handlePatientInfoChange(doc.id, 'procedureName', e.target.value)}
+                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-2"
+                        placeholder="Procedimento"
+                      />
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Médico Responsável</label>
+                      <input
+                        type="text"
+                        value={doc.extractedData?.doctorName || ''}
+                        onChange={e => handlePatientInfoChange(doc.id, 'doctorName', e.target.value)}
+                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-2"
+                        placeholder="Médico responsável"
                       />
                     </div>
                     <div>
                       {/* Espaço reservado para possíveis dados adicionais do paciente */}
                     </div>
                   </div>
-                  {doc.extractedData?.materialsUsed.map((material, index) => (
-                    <div key={index} className="mt-6 p-4 rounded-lg bg-gradient-to-br from-white via-indigo-50 to-purple-50 border border-indigo-100 shadow-sm">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <h4 className="text-sm font-bold text-indigo-600 mb-1">Extraído pela IA:</h4>
-                          <p className="text-xs text-slate-500 mb-1">Descrição do Material: <span className="font-semibold text-slate-700">{material.description}</span></p>
-                          <p className="text-xs text-slate-500 mb-1">Código do Material (se aplicável): <span className="font-semibold text-slate-700">{material.code || 'N/A'}</span></p>
+                  <div className="mb-4">
+                    <h4 className="text-base font-bold text-indigo-700 mb-2">Materiais Utilizados</h4>
+                    {doc.extractedData?.materialsUsed.map((material, index) => (
+                      <div key={index} className={`mb-4 p-4 rounded-lg bg-gradient-to-br from-white via-indigo-50 to-purple-50 border border-indigo-100 shadow-sm ${material.contaminated ? 'ring-2 ring-red-400 bg-red-50/40' : ''}`}>
+                        <div className="flex items-center mb-2">
+                          <input
+                            type="checkbox"
+                            checked={!!material.contaminated}
+                            onChange={e => {
+                              setEditableDocuments(prevDocs =>
+                                prevDocs.map(docItem => {
+                                  if (docItem.id === doc.id && docItem.extractedData) {
+                                    const newMaterials = [...docItem.extractedData.materialsUsed];
+                                    newMaterials[index] = {
+                                      ...newMaterials[index],
+                                      contaminated: e.target.checked
+                                    };
+                                    return { ...docItem, extractedData: { ...docItem.extractedData, materialsUsed: newMaterials } };
+                                  }
+                                  return docItem;
+                                })
+                              );
+                            }}
+                            className="mr-2 accent-red-500 w-5 h-5"
+                            id={`contaminated-${doc.id}-${index}`}
+                          />
+                          <label htmlFor={`contaminated-${doc.id}-${index}`} className="text-xs font-semibold text-red-600 flex items-center cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Contaminado
+                          </label>
                         </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-indigo-600 mb-1">Sua Correção / Confirmação:</h4>
-                          <label className="block text-xs font-semibold text-slate-500 mb-1">Descrição do Material</label>
-                          <input
-                            type="text"
-                            value={material.description}
-                            onChange={e => handleMaterialChange(doc.id, index, 'description', e.target.value)}
-                            className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
-                          />
-                          <label className="block text-xs font-semibold text-slate-500 mb-1">Código do Material (se aplicável)</label>
-                          <input
-                            type="text"
-                            value={material.code || ''}
-                            onChange={e => handleMaterialChange(doc.id, index, 'code', e.target.value)}
-                            className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700"
-                            placeholder="Ex: P-205 (se aplicável)"
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Descrição</label>
+                            <input
+                              type="text"
+                              value={material.description}
+                              onChange={e => handleMaterialChange(doc.id, index, 'description', e.target.value)}
+                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Código</label>
+                            <input
+                              type="text"
+                              value={material.code || ''}
+                              onChange={e => handleMaterialChange(doc.id, index, 'code', e.target.value)}
+                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
+                              placeholder="Código do material"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Quantidade</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={material.quantity}
+                              onChange={e => handleMaterialChange(doc.id, index, 'quantity', e.target.value)}
+                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Lote</label>
+                            <input
+                              type="text"
+                              value={material.lotNumber || ''}
+                              onChange={e => handleMaterialChange(doc.id, index, 'lotNumber', e.target.value)}
+                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
+                              placeholder="Lote"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Observação</label>
+                            <input
+                              type="text"
+                              value={material.observation || ''}
+                              onChange={e => handleMaterialChange(doc.id, index, 'observation', e.target.value)}
+                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
+                              placeholder="Observação"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-end mt-2">
+                          <button
+                            onClick={() => handleRemoveMaterial(doc.id, index)}
+                            className="px-3 py-1.5 rounded bg-gradient-to-br from-red-500 to-red-700 text-white text-xs font-bold shadow hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 ml-2"
+                          >Remover Material</button>
                         </div>
                       </div>
-                      <p className="text-xs text-slate-500 mt-2"><strong>Qtd. Consumida (neste doc):</strong> {material.quantity}</p>
+                    ))}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => handleAddMaterial(doc.id)}
+                        className="text-indigo-600 text-sm font-medium hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer bg-transparent border-none p-0 m-0"
+                        style={{minWidth: '0', boxShadow: 'none'}}
+                      >+ Material</button>
                     </div>
-                  ))}
-                  {(!doc.extractedData || doc.extractedData.materialsUsed.length === 0) && (
-                    <p className="text-sm text-slate-500 italic text-center py-2">Nenhum material extraído para este documento.</p>
-                  )}
+                  </div>
                 </div>
               ))}
             </section>

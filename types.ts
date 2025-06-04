@@ -1,5 +1,3 @@
-
-
 export interface PatientInfo {
   patientName: string | null;
   patientDOB: string | null;
@@ -14,6 +12,7 @@ export interface MaterialUsed {
   code: string | null;
   lotNumber?: string | null;
   observation?: string | null; // Added for user/AI provided observations
+  contaminated?: boolean; // Indica se o material está contaminado
 }
 
 export interface ExtractedData extends PatientInfo {

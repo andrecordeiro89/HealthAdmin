@@ -1,5 +1,3 @@
-
-
 import { Hospital, HospitalOption, MaterialDatabaseItem } from './types';
 
 export const COMPANY_NAME = "HealthAdmin";
@@ -52,7 +50,7 @@ export const UI_TEXT = {
   confirmHospitalButton: "Confirmar Hospital e Adicionar Documentos",
   documentManagementTitle: (hospitalName: string) => `Gerenciar Documentos de Consumo - ${hospitalName}`,
   addDocumentButton: "Adicionar Documentos (Imagens)",
-  processAllDocumentsButton: "Processar Todos os Documentos Pendentes com IA",
+  processAllDocumentsButton: "Processar Documentos",
   processingDocumentsMessage: "Processando documentos... Por favor, aguarde.",
   generateAndDownloadPdfButton: "Gerar e Baixar PDF Consolidado",
   pdfGenerationSuccessMessage: "Relatório PDF gerado e download iniciado com sucesso!",
@@ -118,7 +116,7 @@ export const UI_TEXT = {
   noMaterialsToCorrect: "Nenhum material extraído com sucesso para correção nesta etapa.",
   correctionsSavedSuccessfully: "Correções salvas! Os dados dos documentos foram atualizados e o sistema aprendeu com suas informações.",
   correctionsSkipped: "Etapa de correção de materiais pulada.",
-  proceedToMaterialCorrectionButton: "Corrigir Materiais (Aprimorar IA)",
+  proceedToMaterialCorrectionButton: "Corrigir Materiais",
   processingCompletedGoToCorrection: "Processamento concluído. Revise e corrija os materiais abaixo para aprimorar a IA.",
   viewDocumentButtonLabel: "Visualizar",
   modalTitleViewDocument: (fileName: string) => `Visualizando Documento: ${fileName}`,
