@@ -44,7 +44,7 @@ const App: React.FC = () => {
   const [documents, setDocuments] = useState<ProcessedDocumentEntry[]>([]);
   const [lastGeneratedOrder, setLastGeneratedOrder] = useState<ConsolidatedOrderData | null>(null);
   const [orderHistory, setOrderHistory] = useState<ConsolidatedOrderData[]>([]);
-  const [alert, setAlert] = useState<{ message: string, type: AlertType } | null>(null);
+  const [toasts, setToasts] = useState<{ id: number, message: string, type: AlertType }[]>([]);
 
   const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
@@ -68,7 +68,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("Error loading order history from localStorage:", error);
-      setAlert({ message: "Erro ao carregar histórico de pedidos do armazenamento local.", type: AlertType.Error });
+      addToast("Erro ao carregar histórico de pedidos do armazenamento local.", AlertType.Error);
     }
 
     try {
@@ -86,7 +86,7 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Error loading hospital options from localStorage:", error);
       setHospitalOptions(INITIAL_HOSPITAL_OPTIONS); 
-      setAlert({ message: "Erro ao carregar lista de hospitais do armazenamento local.", type: AlertType.Error });
+      addToast("Erro ao carregar lista de hospitais do armazenamento local.", AlertType.Error);
     }
 
     try {
@@ -104,7 +104,7 @@ const App: React.FC = () => {
     } catch (error) {
         console.error("Error loading material database from localStorage:", error);
         setMaterialDatabase(INITIAL_SIMULATED_MATERIAL_DATABASE);
-        setAlert({ message: "Erro ao carregar base de dados de materiais do armazenamento local.", type: AlertType.Error });
+        addToast("Erro ao carregar base de dados de materiais do armazenamento local.", AlertType.Error);
     }
   }, []);
 
@@ -114,7 +114,7 @@ const App: React.FC = () => {
       localStorage.setItem(LOCAL_STORAGE_ORDER_HISTORY_KEY, JSON.stringify(orderHistory));
     } catch (error) {
       console.error("Error saving order history to localStorage:", error);
-      setAlert({ message: "Erro ao salvar histórico de pedidos no armazenamento local.", type: AlertType.Error });
+      addToast("Erro ao salvar histórico de pedidos no armazenamento local.", AlertType.Error);
     }
   }, [orderHistory]);
 
@@ -124,7 +124,7 @@ const App: React.FC = () => {
       localStorage.setItem(LOCAL_STORAGE_HOSPITAL_OPTIONS_KEY, JSON.stringify(hospitalOptions));
     } catch (error) {
       console.error("Error saving hospital options to localStorage:", error);
-      setAlert({ message: "Erro ao salvar lista de hospitais no armazenamento local.", type: AlertType.Error });
+      addToast("Erro ao salvar lista de hospitais no armazenamento local.", AlertType.Error);
     }
   }, [hospitalOptions]);
 
@@ -134,7 +134,7 @@ const App: React.FC = () => {
       localStorage.setItem(LOCAL_STORAGE_MATERIAL_DB_KEY, JSON.stringify(materialDatabase));
     } catch (error) {
       console.error("Error saving material database to localStorage:", error);
-      setAlert({ message: "Erro ao salvar base de dados de materiais no armazenamento local.", type: AlertType.Error });
+      addToast("Erro ao salvar base de dados de materiais no armazenamento local.", AlertType.Error);
     }
   }, [materialDatabase]);
 
@@ -146,18 +146,18 @@ const App: React.FC = () => {
     setAppState(AppState.MANAGING_DOCUMENTS);
     setDocuments([]);
     setLastGeneratedOrder(null);
-    setAlert(null);
+    addToast(UI_TEXT.hospitalAddedSuccessMessage(hospitalDetails?.name || hospitalId), AlertType.Success);
   };
 
   const handleAddNewHospital = (newHospitalName: string): boolean => {
     const trimmedName = newHospitalName.trim();
     if (!trimmedName) {
-      setAlert({ message: UI_TEXT.errorHospitalNameRequired, type: AlertType.Error });
+      addToast(UI_TEXT.errorHospitalNameRequired, AlertType.Error);
       return false;
     }
     const nameExists = hospitalOptions.some(h => h.name.toLowerCase() === trimmedName.toLowerCase());
     if (nameExists) {
-      setAlert({ message: UI_TEXT.errorHospitalNameExists, type: AlertType.Error });
+      addToast(UI_TEXT.errorHospitalNameExists, AlertType.Error);
       return false;
     }
 
@@ -165,7 +165,7 @@ const App: React.FC = () => {
     const newHospital: HospitalOption = { id: newHospitalId, name: trimmedName };
     
     setHospitalOptions(prev => [...prev, newHospital].sort((a,b) => a.name.localeCompare(b.name)));
-    setAlert({ message: UI_TEXT.hospitalAddedSuccessMessage(trimmedName), type: AlertType.Success });
+    addToast(UI_TEXT.hospitalAddedSuccessMessage(trimmedName), AlertType.Success);
     return true;
   };
 
@@ -175,12 +175,12 @@ const App: React.FC = () => {
     setSelectedHospitalName('');
     setDocuments([]);
     setLastGeneratedOrder(null);
-    setAlert(null);
+    addToast('Retornando à seleção de hospital.', AlertType.Info);
     setAppState(AppState.SELECTING_HOSPITAL);
   };
 
   const handleNavigateToManageMaterialDatabase = () => {
-    setAlert(null);
+    addToast('Gerenciando base de materiais.', AlertType.Info);
     setAppState(AppState.MANAGE_MATERIAL_DATABASE);
   };
 
@@ -194,7 +194,7 @@ const App: React.FC = () => {
       imagePreviewUrl: URL.createObjectURL(file),
     }));
     setDocuments(prev => [...prev, ...newDocuments]);
-    setAlert(null);
+    addToast(`${files.length} documento(s) adicionado(s) com sucesso.`, AlertType.Success);
   };
 
   const handleRemoveDocument = (docId: string) => {
@@ -232,15 +232,14 @@ const App: React.FC = () => {
   const handleProcessAllDocuments = useCallback(async () => {
     if (documents.every(doc => doc.status === 'success' || doc.status === 'error')) {
       if (documents.some(doc => doc.status === 'success')) {
-        setAlert({ message: UI_TEXT.allDocsProcessedOrErrorGoToReview, type: AlertType.Info });
+        addToast(UI_TEXT.allDocsProcessedOrErrorGoToReview, AlertType.Info);
       } else {
-        setAlert({ message: "Todos os documentos já foram processados ou resultaram em erro. Nenhum dado para revisar.", type: AlertType.Info });
+        addToast('Todos os documentos já foram processados ou resultaram em erro. Nenhum dado para revisar.', AlertType.Info);
       }
       return;
     }
 
     setAppState(AppState.PROCESSING_DOCUMENTS);
-    setAlert(null);
 
     let updatedDocs = [...documents];
     const docsToProcess = documents.filter(doc => doc.status === 'pending');
@@ -272,13 +271,13 @@ const App: React.FC = () => {
     const errorCount = processedResults.filter(d => d.status === 'error').length;
 
     if (anySuccess) {
-      setAlert({ message: `Processamento concluído. ${successCount} documento(s) com sucesso, ${errorCount} com erro. Revise e corrija os materiais abaixo para aprimorar a IA.`, type: AlertType.Success });
+      addToast(`Processamento concluído. ${successCount} documento(s) com sucesso, ${errorCount} com erro. Revise e corrija os materiais abaixo para aprimorar a IA.`, AlertType.Success);
       setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
     } else if (anyError && !anySuccess) {
-      setAlert({ message: "Todos os documentos pendentes falharam ao processar. Verifique os detalhes.", type: AlertType.Error });
-      setAppState(AppState.MANAGING_DOCUMENTS);
+      addToast('Todos os documentos pendentes falharam ao processar. Verifique os detalhes.', AlertType.Error);
+      setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
     } else {
-      setAlert({ message: "Nenhum documento pendente foi processado.", type: AlertType.Info });
+      addToast('Nenhum documento pendente foi processado.', AlertType.Info);
       setAppState(AppState.MANAGING_DOCUMENTS);
     }
   }, [documents]);
@@ -370,12 +369,12 @@ const App: React.FC = () => {
 
     setDocuments(updatedProcessedDocuments);
 
-    setAlert({ message: UI_TEXT.correctionsSavedSuccessfully, type: AlertType.Success });
+    addToast(UI_TEXT.correctionsSavedSuccessfully, AlertType.Success);
     setAppState(AppState.REVIEW_AND_EDIT);
   };
 
   const handleSkipMaterialCorrections = () => {
-    setAlert({ message: UI_TEXT.correctionsSkipped, type: AlertType.Info });
+    addToast(UI_TEXT.correctionsSkipped, AlertType.Info);
     setAppState(AppState.REVIEW_AND_EDIT);
   };
 
@@ -383,9 +382,8 @@ const App: React.FC = () => {
   const handleProceedToReview = () => { 
     if (documents.some(doc => doc.status === 'success')) {
       setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK); 
-      setAlert(null);
     } else {
-      setAlert({ message: UI_TEXT.noSuccessfullyProcessedDocsForReview, type: AlertType.Warning });
+      addToast(UI_TEXT.noSuccessfullyProcessedDocsForReview, AlertType.Warning);
     }
   };
 
@@ -409,16 +407,15 @@ const App: React.FC = () => {
       )
     );
     handleCloseEditModal();
-    setAlert({ message: `Dados do documento '${documents.find(d=>d.id === docId)?.fileName}' atualizados. ${UI_TEXT.aiCorrectionFeedbackNote}`, type: AlertType.Success });
+    addToast(`Dados do documento '${documents.find(d=>d.id === docId)?.fileName}' atualizados. ${UI_TEXT.aiCorrectionFeedbackNote}`, AlertType.Success);
   };
 
 
   const handleGenerateConsolidatedPdf = async () => {
     if (!selectedHospital || documents.filter(d => d.status === 'success' && d.extractedData).length === 0) {
-      setAlert({ message: "Nenhum hospital selecionado ou nenhum documento com dados válidos para gerar o relatório.", type: AlertType.Error });
+      addToast('Nenhum hospital selecionado ou nenhum documento com dados válidos para gerar o relatório.', AlertType.Error);
       return;
     }
-    setAlert(null);
     setAppState(AppState.PROCESSING_DOCUMENTS); 
 
     const successfulDocsForMaterials = documents.filter(d => d.status === 'success' && d.extractedData);
@@ -440,15 +437,13 @@ const App: React.FC = () => {
       const lotKeyPart = consumedMat.lotNumber ? `_LOT_${consumedMat.lotNumber}` : '_NO_LOT';
       const key = `${materialBaseKey}${lotKeyPart}`;
       
-      // Função para filtrar observação
-      function filterObservation(obs?: string | null): string | null {
-        if (!obs) return null;
-        const obsLower = obs.toLowerCase();
-        for (const keyword of OBSERVATION_KEYWORDS) {
-          if (obsLower.includes(keyword)) {
-            return obs;
-          }
-        }
+      // Montar observação combinando IA e usuário
+      function buildObservation(mat: any): string | null {
+        const obsIa = mat.observacaoOcr?.trim();
+        const obsUser = mat.observacaoUsuario?.trim();
+        if (obsIa && obsUser) return `<b>${obsIa}</b> | ${obsUser}`;
+        if (obsIa) return `<b>${obsIa}</b>`;
+        if (obsUser) return obsUser;
         return null;
       }
 
@@ -458,15 +453,14 @@ const App: React.FC = () => {
         if (!existing.sourceDocumentIds.includes(consumedMat.sourceDocId)) {
             existing.sourceDocumentIds.push(consumedMat.sourceDocId);
         }
-        const filteredObs = filterObservation(consumedMat.observation);
-        if (filteredObs) {
+        const obs = buildObservation(consumedMat);
+        if (obs) {
           if (!existing.observation) {
-            existing.observation = filteredObs;
-          } else if (existing.observation !== filteredObs && !existing.observation.includes(filteredObs)) {
-            existing.observation += ` | ${filteredObs}`;
+            existing.observation = obs;
+          } else if (existing.observation !== obs && !existing.observation.includes(obs)) {
+            existing.observation += ` | ${obs}`;
           }
         }
-        // Propagar contaminação se algum material for contaminado
         if (consumedMat.contaminated) {
           existing.contaminated = true;
         }
@@ -475,7 +469,7 @@ const App: React.FC = () => {
           description: consumedMat.description,
           code: consumedMat.code,
           lotNumber: consumedMat.lotNumber,
-          observation: filterObservation(consumedMat.observation),
+          observation: buildObservation(consumedMat),
           quantity: consumedMat.quantity,
           totalConsumedQuantity: consumedMat.quantity,
           replenishQuantity: 0,
@@ -580,11 +574,11 @@ const App: React.FC = () => {
     
     try {
       await generateConsolidatedOrderPdf(newConsolidatedOrder, selectedHospitalName);
-      setAlert({ message: UI_TEXT.pdfGenerationSuccessMessage, type: AlertType.Success });
+      addToast(UI_TEXT.pdfGenerationSuccessMessage, AlertType.Success);
       setAppState(AppState.REPORT_GENERATED);
     } catch (error) {
       console.error("Error generating PDF:", error);
-      setAlert({ message: `Falha ao gerar PDF: ${(error as Error).message}`, type: AlertType.Error });
+      addToast(`Falha ao gerar PDF: ${(error as Error).message}`, AlertType.Error);
       setAppState(AppState.REVIEW_AND_EDIT); 
     }
   };
@@ -594,17 +588,15 @@ const App: React.FC = () => {
     setSelectedHospitalName('');
     setDocuments([]);
     setLastGeneratedOrder(null);
-    setAlert(null);
+    addToast('Novo lote iniciado.', AlertType.Info);
     setAppState(AppState.SELECTING_HOSPITAL);
   };
   
   const handleNavigateToHistory = () => {
     setAppState(AppState.VIEW_HISTORY);
-    setAlert(null);
   };
 
   const handleReprintPdf = async (orderToReprint: ConsolidatedOrderData) => {
-    setAlert(null);
     const originalAppState = appState;
     setAppState(AppState.PROCESSING_DOCUMENTS);
 
@@ -613,10 +605,10 @@ const App: React.FC = () => {
 
     try {
       await generateConsolidatedOrderPdf(orderToReprint, hospitalNameForReprint);
-      setAlert({ message: UI_TEXT.pdfReprintSuccessMessage, type: AlertType.Success });
+      addToast(UI_TEXT.pdfReprintSuccessMessage, AlertType.Success);
     } catch (error) {
       console.error("Error reprinting PDF:", error);
-      setAlert({ message: `${UI_TEXT.pdfReprintErrorMessage}: ${(error as Error).message}`, type: AlertType.Error });
+      addToast(`${UI_TEXT.pdfReprintErrorMessage}: ${(error as Error).message}`, AlertType.Error);
     } finally {
       setAppState(originalAppState); 
     }
@@ -624,10 +616,9 @@ const App: React.FC = () => {
 
   const handleGenerateGlobalConsumptionReport = async () => {
     if (orderHistory.length === 0) {
-      setAlert({ message: UI_TEXT.noDataForGlobalReport, type: AlertType.Warning });
+      addToast(UI_TEXT.noDataForGlobalReport, AlertType.Warning);
       return;
     }
-    setAlert(null);
     const originalAppState = appState;
     setAppState(AppState.PROCESSING_DOCUMENTS); // Reuse for spinner
 
@@ -666,10 +657,10 @@ const App: React.FC = () => {
 
     try {
       await generateGlobalMaterialConsumptionPdf(consumptionDataForPdf, new Date().toISOString());
-      setAlert({ message: UI_TEXT.pdfGenerationSuccessMessage, type: AlertType.Success });
+      addToast(UI_TEXT.pdfGenerationSuccessMessage, AlertType.Success);
     } catch (error) {
       console.error("Error generating global consumption PDF:", error);
-      setAlert({ message: `Falha ao gerar PDF de consumo global: ${(error as Error).message}`, type: AlertType.Error });
+      addToast(`Falha ao gerar PDF de consumo global: ${(error as Error).message}`, AlertType.Error);
     } finally {
       setAppState(originalAppState);
     }
@@ -712,7 +703,7 @@ const App: React.FC = () => {
         return remainingDocs;
     });
 
-    setAlert({ message: `Paciente/grupo '${patientGroupKeyToRemove}' e seus documentos foram removidos.`, type: AlertType.Success });
+    addToast(`Paciente/grupo '${patientGroupKeyToRemove}' e seus documentos foram removidos.`, AlertType.Success);
     handleCloseRemovePatientConfirmModal();
   };
   
@@ -733,7 +724,7 @@ const App: React.FC = () => {
     if (erroredDocs.length === 0) return;
 
     setAppState(AppState.PROCESSING_DOCUMENTS);
-    setAlert({ message: `Reprocessando ${erroredDocs.length} documento(s) com erro...`, type: AlertType.Info });
+    addToast(`Reprocessando ${erroredDocs.length} documento(s) com erro...`, AlertType.Info);
 
     let updatedDocs = [...documents];
     // Retry em batches de 3
@@ -763,13 +754,13 @@ const App: React.FC = () => {
     const errorCount = retriedResults.filter(d => d.status === 'error').length;
 
     if (anySuccess) {
-      setAlert({ message: `Retry concluído. ${successCount} documento(s) processados com sucesso, ${errorCount} ainda com erro.`, type: AlertType.Success });
+      addToast(`Retry concluído. ${successCount} documento(s) processados com sucesso, ${errorCount} ainda com erro.`, AlertType.Success);
       setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
     } else if (anyError && !anySuccess) {
-      setAlert({ message: "Todos os documentos ainda falharam ao processar. Verifique os detalhes.", type: AlertType.Error });
+      addToast("Todos os documentos ainda falharam ao processar. Verifique os detalhes.", AlertType.Error);
       setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
     } else {
-      setAlert({ message: "Nenhum documento foi reprocessado.", type: AlertType.Info });
+      addToast("Nenhum documento foi reprocessado.", AlertType.Info);
       setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
     }
   }, [documents]);
@@ -809,7 +800,13 @@ const App: React.FC = () => {
         } else if (orderHistory.length > 0 && !selectedHospital && appState === AppState.PROCESSING_DOCUMENTS) { 
              spinnerText = "Reimprimindo PDF...";
         }
-        return <Spinner text={spinnerText} />;
+        return (
+          <div className="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white via-indigo-50 to-purple-50">
+            <div className="flex flex-col items-center justify-center flex-1">
+              <Spinner text={spinnerText} />
+            </div>
+          </div>
+        );
 
       case AppState.DATA_CORRECTION_AI_FEEDBACK:
         return (
@@ -820,6 +817,8 @@ const App: React.FC = () => {
                 onSkip={handleSkipMaterialCorrections}
                 onGoBack={() => setAppState(AppState.MANAGING_DOCUMENTS)}
                 onRetryErroredDocuments={handleRetryErroredDocuments}
+                materialDbItems={materialDatabase}
+                onMaterialDbUpdate={setMaterialDatabase}
             />
         );
       case AppState.REVIEW_AND_EDIT:
@@ -841,8 +840,8 @@ const App: React.FC = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-purple-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h2 className="text-xl font-semibold text-slate-700 mb-2">{UI_TEXT.pdfGenerationSuccessMessage}</h2>
-                {lastGeneratedOrder && <p className="text-sm text-slate-500 mb-6">ID do Pedido Gerado: {lastGeneratedOrder.orderId}</p>}
+                <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-2">{UI_TEXT.pdfGenerationSuccessMessage}</h2>
+                {lastGeneratedOrder && <p className="text-base text-slate-500 mb-6">ID do Pedido Gerado: {lastGeneratedOrder.orderId}</p>}
                 <button
                     onClick={handleStartNew}
                     className={`${purpleGradientPrimary} mb-3`}
@@ -874,7 +873,7 @@ const App: React.FC = () => {
                 materialDbItems={materialDatabase}
                 onMaterialDbUpdate={handleMaterialDatabaseUpdate}
                 onBack={handleGoBackToHospitalSelection}
-                setGlobalAlert={setAlert} 
+                setGlobalAlert={(alert) => { if (alert) addToast(alert.message, alert.type); }}
             />
         );
       default:
@@ -883,7 +882,7 @@ const App: React.FC = () => {
   };
   
   // Gradiente suave para fundo premium
-  const appBackgroundClass = "bg-gradient-to-br from-white via-indigo-50 to-purple-50";
+  const appBackgroundClass = "min-h-screen min-w-[1200px] flex flex-col bg-gradient-to-br from-white via-indigo-50 to-purple-50 text-slate-700 w-full";
   // Aplica a classe no body dinamicamente para esconder scrollbars do navegador na tela de seleção de hospital
   React.useEffect(() => {
     if (appState === AppState.SELECTING_HOSPITAL) {
@@ -900,6 +899,11 @@ const App: React.FC = () => {
     };
   }, [appState]);
 
+  const addToast = (message: string, type: AlertType) => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  };
 
   return (
     <>
@@ -908,14 +912,18 @@ const App: React.FC = () => {
         .hide-browser-scrollbar::-webkit-scrollbar { display: none !important; }
         .hide-browser-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
       `}</style>
-      <div className={`min-h-screen min-w-[1200px] flex flex-col ${appBackgroundClass} text-slate-700 w-full`} style={{width: '100vw'}}>
-        {/* Header só aparece se não for a tela de seleção de hospital */}
-        {appState !== AppState.SELECTING_HOSPITAL && <Header title="HealthAdmin" />}
+      <div className={appBackgroundClass} style={{width: '100vw'}}>
+        {/* Header só aparece se NÃO for uma tela com logotipo centralizado */}
+        {appState === AppState.VIEW_HISTORY || appState === AppState.MANAGE_MATERIAL_DATABASE ? <Header title="HealthAdmin" /> : null}
         <main className="flex-grow w-full h-full px-0 py-0 flex flex-col">
-          {alert && <Alert message={alert.message} type={alert.type} onDismiss={() => setAlert(null)} />}
-          <div className="flex-1 w-full h-full overflow-auto">
-            {/* Se for a tela de seleção de hospital, mostra logo minimalista centralizado */}
-            {appState === AppState.SELECTING_HOSPITAL ? (
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 items-end pointer-events-none">
+            {toasts.map(t => (
+              <Alert key={t.id} message={t.message} type={t.type} onDismiss={() => setToasts(prev => prev.filter(x => x.id !== t.id))} />
+            ))}
+          </div>
+          <div className="flex-1 w-full h-full">
+            {/* Se for uma tela com logotipo centralizado, mostra logo centralizado */}
+            {appState === AppState.SELECTING_HOSPITAL || appState === AppState.MANAGING_DOCUMENTS || appState === AppState.DATA_CORRECTION_AI_FEEDBACK || appState === AppState.REVIEW_AND_EDIT || appState === AppState.REPORT_GENERATED ? (
               <div className="w-full min-h-screen flex flex-col items-center pt-8 select-none" style={{minHeight: '80vh'}}>
                 <div className="flex flex-row items-center justify-center mb-10 mt-2">
                   <span className="text-3xl sm:text-5xl font-extrabold text-indigo-700 tracking-tight" style={{letterSpacing: '0.01em'}}>
@@ -925,7 +933,7 @@ const App: React.FC = () => {
                     <polyline points="2,12 11,12 15,21 21,3 27,18 32,12 46,12" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                {/* Renderiza o conteúdo normal da tela de seleção de hospital */}
+                {/* Renderiza o conteúdo normal da tela */}
                 {renderContent()}
               </div>
             ) : (
@@ -933,7 +941,6 @@ const App: React.FC = () => {
             )}
           </div>
         </main>
-        {appState !== AppState.DATA_CORRECTION_AI_FEEDBACK && appState !== AppState.MANAGING_DOCUMENTS && appState !== AppState.REVIEW_AND_EDIT && <Footer />}
 
         {showEditModal && editingDoc && editingDoc.extractedData && (
           <Modal 
@@ -946,6 +953,7 @@ const App: React.FC = () => {
               initialData={editingDoc.extractedData}
               onSubmit={(updatedData) => handleSaveEditedDocument(editingDoc.id, updatedData)}
               submitButtonText={UI_TEXT.saveChangesButton} 
+              materialDbItems={materialDatabase}
             />
              <div className="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-200">
                   <button 
@@ -966,7 +974,7 @@ const App: React.FC = () => {
               title={UI_TEXT.removePatientConfirmTitle}
               size="md"
           >
-              <p className="text-slate-600 mb-6">{UI_TEXT.removePatientConfirmMessage(patientGroupKeyToRemove)}</p>
+              <p className="text-base text-slate-600 mb-6">{UI_TEXT.removePatientConfirmMessage(patientGroupKeyToRemove)}</p>
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                   <button
                       type="button"

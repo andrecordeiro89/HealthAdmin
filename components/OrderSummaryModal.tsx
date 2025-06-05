@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { OrderRequest, ReplenishmentMaterial } from '../types'; 
 import { UI_TEXT } from '../constants';
@@ -21,7 +19,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ order, onC
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-opacity duration-300">
       <div className="bg-white p-6 md:p-8 rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto text-slate-700 border border-gray-200">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-indigo-600">{UI_TEXT.orderSummarySection || "Resumo do Pedido"}</h2> 
+          <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4">{UI_TEXT.orderSummarySection || "Resumo do Pedido"}</h2> 
           <button onClick={onCancel} className={modalCloseIcon}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

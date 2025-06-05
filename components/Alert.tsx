@@ -46,18 +46,18 @@ export const Alert: React.FC<AlertProps> = ({ message, type, onDismiss, children
   }
 
   return (
-    <div className={`${baseClasses} ${typeClasses}`} role="alert">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 mr-3 flex-shrink-0 ${iconColor}`}>
+    <div className={`fixed bottom-6 right-6 z-50 max-w-sm w-full pointer-events-auto transition-transform duration-300 ease-in-out ${baseClasses} ${typeClasses} animate-fade-in-up`} role="alert" style={{boxShadow: '0 8px 32px 0 rgba(80, 36, 180, 0.18)', borderRadius: '1.25rem', minWidth: '320px'}}>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-7 h-7 mr-4 flex-shrink-0 ${iconColor}`}>
         <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
       </svg>
-      <div className="flex-grow">
+      <div className="flex-grow text-base font-semibold pr-2">
         <span>{message}</span>
         {children && <div className="mt-1 text-xs">{children}</div>}
       </div>
       {onDismiss && (
         <button 
           onClick={onDismiss} 
-          className="ml-2 text-lg font-bold text-slate-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200 bg-transparent border-none p-0 h-5 w-5 flex items-center justify-center"
+          className="ml-4 text-2xl font-bold text-slate-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200 bg-transparent border-none p-0 h-7 w-7 flex items-center justify-center"
           aria-label="Fechar alerta"
         >
           ×

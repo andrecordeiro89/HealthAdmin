@@ -11,7 +11,9 @@ export interface MaterialUsed {
   quantity: number;
   code: string | null;
   lotNumber?: string | null;
-  observation?: string | null; // Added for user/AI provided observations
+  observation?: string | null; // (deprecado, usar os campos abaixo)
+  observacaoOcr?: string | null; // Sugestão da IA/OCR
+  observacaoUsuario?: string | null; // Observação manual do usuário
   contaminated?: boolean; // Indica se o material está contaminado
 }
 

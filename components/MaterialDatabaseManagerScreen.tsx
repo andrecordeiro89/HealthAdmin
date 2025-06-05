@@ -1,17 +1,16 @@
-
-
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { UI_TEXT } from '../constants';
 import { MaterialDatabaseItem } from '../types';
 import { Alert, AlertType } from './Alert';
 import { Modal } from './Modal';
 import { Spinner } from './Spinner'; // Import Spinner
+import { buttonPrimary, buttonSecondary, buttonLight, buttonDanger, inputBase, labelBase, cardBase, cardLarge } from './uiClasses';
 
 interface MaterialDatabaseManagerScreenProps {
   materialDbItems: MaterialDatabaseItem[];
   onMaterialDbUpdate: (updatedDb: MaterialDatabaseItem[]) => void;
   onBack: () => void;
-  setGlobalAlert: (alert: { message: string, type: AlertType } | null) => void;
+  setGlobalAlert?: (alert: { message: string, type: AlertType } | null) => void;
 }
 
 export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScreenProps> = ({ 
@@ -37,6 +36,42 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
   const [importFeedback, setImportFeedback] = useState<{ message: string, type: AlertType, details?: string[] } | null>(null);
   const [isImporting, setIsImporting] = useState<boolean>(false);
 
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const suggestionsRef = useRef<HTMLUListElement>(null);
+
+  // Sugestões filtradas para autocomplete
+  const filteredSuggestions = useMemo(() => {
+    const desc = newMaterialDesc.trim().toLowerCase();
+    if (!desc) return [];
+    return materialDbItems.filter(m => m.description.toLowerCase().includes(desc));
+  }, [newMaterialDesc, materialDbItems]);
+
+  // Verificação de duplicidade em tempo real
+  const isDuplicateDesc = useMemo(() => {
+    const desc = newMaterialDesc.trim().toLowerCase();
+    return desc && materialDbItems.some(m => m.description.toLowerCase() === desc);
+  }, [newMaterialDesc, materialDbItems]);
+
+  // Fechar sugestões ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+        setHighlightedIndex(-1);
+      }
+    }
+    if (showSuggestions) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSuggestions]);
+
   const purpleGradientPrimary = "text-white font-semibold py-2 px-4 rounded-lg shadow-lg bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-white transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out disabled:opacity-60 disabled:saturate-50 disabled:cursor-not-allowed disabled:transform-none h-fit";
   const purpleGradientLight = "text-purple-700 font-medium py-2 px-4 rounded-lg shadow-sm bg-gradient-to-br from-purple-100 to-indigo-200 hover:from-purple-200 hover:to-indigo-300 border border-purple-300 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-300 focus:ring-offset-white transition-all duration-300 ease-in-out disabled:opacity-70 disabled:cursor-not-allowed";
   const redGradientDestructive = "text-white font-semibold py-2 px-4 rounded-lg shadow-lg bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 focus:ring-offset-white transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out disabled:opacity-60 disabled:saturate-50 disabled:cursor-not-allowed disabled:transform-none";
@@ -59,7 +94,9 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
   const resetAlerts = () => {
     setLocalAlert(null);
     setImportFeedback(null);
-    // setGlobalAlert(null); // Global alerts are managed by App.tsx visibility timing
+    if (setGlobalAlert) {
+      setGlobalAlert(null);
+    }
   }
 
   const handleAddNewMaterial = (e: React.FormEvent) => {
@@ -93,8 +130,10 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
     onMaterialDbUpdate(updatedDb);
     setNewMaterialDesc('');
     setNewMaterialCode('');
-    setGlobalAlert({ message: UI_TEXT.materialAddedSuccess, type: AlertType.Success });
-    setTimeout(() => setGlobalAlert(null), 3000);
+    if (setGlobalAlert) {
+      setGlobalAlert({ message: UI_TEXT.materialAddedSuccess, type: AlertType.Success });
+      setTimeout(() => setGlobalAlert(null), 3000);
+    }
   };
 
   const handleEdit = (material: MaterialDatabaseItem) => {
@@ -135,8 +174,10 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
     onMaterialDbUpdate(updatedDb);
     setEditingMaterialId(null);
     setCurrentEdit({});
-    setGlobalAlert({ message: UI_TEXT.materialUpdatedSuccess, type: AlertType.Success });
-    setTimeout(() => setGlobalAlert(null), 3000);
+    if (setGlobalAlert) {
+      setGlobalAlert({ message: UI_TEXT.materialUpdatedSuccess, type: AlertType.Success });
+      setTimeout(() => setGlobalAlert(null), 3000);
+    }
   };
 
   const handleInputChangeForEdit = (field: 'description' | 'code', value: string) => {
@@ -155,8 +196,10 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
     onMaterialDbUpdate(updatedDb);
     setShowConfirmDeleteModal(false);
     setMaterialToDelete(null);
-    setGlobalAlert({ message: UI_TEXT.materialDeletedSuccess, type: AlertType.Success });
-    setTimeout(() => setGlobalAlert(null), 3000);
+    if (setGlobalAlert) {
+      setGlobalAlert({ message: UI_TEXT.materialDeletedSuccess, type: AlertType.Success });
+      setTimeout(() => setGlobalAlert(null), 3000);
+    }
   };
 
   const processImportedItems = (itemsFromParser: {description: string, code: string, originalLineNumber: number}[]) => {
@@ -313,8 +356,10 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
             details: allErrorDetails.length > 0 ? allErrorDetails.slice(0,10) : undefined 
         });
          if (addedCount > 0) {
-            setGlobalAlert({ message: UI_TEXT.importSuccessMessage(addedCount, totalSkippedOrInvalid, parsingErrorDetails.length + validationErrorDetails.length).split(':')[0], type: AlertType.Success});
-            setTimeout(() => setGlobalAlert(null), 4000);
+            if (setGlobalAlert) {
+                setGlobalAlert({ message: UI_TEXT.importSuccessMessage(addedCount, totalSkippedOrInvalid, parsingErrorDetails.length + validationErrorDetails.length).split(':')[0], type: AlertType.Success});
+                setTimeout(() => setGlobalAlert(null), 4000);
+            }
         }
 
 
@@ -341,12 +386,10 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
   return (
     <div className="w-full max-w-4xl mx-auto bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-xl shadow-xl border border-gray-200">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-indigo-600"> 
-          {UI_TEXT.manageMaterialDbTitle}
-        </h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4">{UI_TEXT.manageMaterialDbTitle}</h2>
         <button
           onClick={() => { resetAlerts(); onBack();}}
-          className={purpleGradientLight}
+          className={buttonLight}
           aria-label={UI_TEXT.backToHospitalSelectionButton}
         >
           {UI_TEXT.backToHospitalSelectionButton}
@@ -377,33 +420,84 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
       <form onSubmit={handleAddNewMaterial} className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
         <h3 className="text-lg font-semibold text-indigo-600 mb-3">{UI_TEXT.addNewMaterialSectionTitle}</h3> 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div className="md:col-span-2">
-            <label htmlFor="newMaterialDesc" className={labelClass}>{UI_TEXT.descriptionInputLabel}</label>
+          <div className="md:col-span-2 relative">
+            <label htmlFor="newMaterialDesc" className={labelBase}>{UI_TEXT.descriptionInputLabel}</label>
             <input
               type="text"
               id="newMaterialDesc"
               value={newMaterialDesc}
-              onChange={(e) => setNewMaterialDesc(e.target.value)}
-              className={inputClass}
+              onChange={(e) => {
+                setNewMaterialDesc(e.target.value);
+                setShowSuggestions(true);
+                setHighlightedIndex(-1);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              onKeyDown={(e) => {
+                if (!showSuggestions || filteredSuggestions.length === 0) return;
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setHighlightedIndex((prev) => (prev + 1) % filteredSuggestions.length);
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setHighlightedIndex((prev) => (prev - 1 + filteredSuggestions.length) % filteredSuggestions.length);
+                } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+                  e.preventDefault();
+                  setNewMaterialDesc(filteredSuggestions[highlightedIndex].description);
+                  setShowSuggestions(false);
+                  setHighlightedIndex(-1);
+                }
+              }}
+              className={inputBase + (isDuplicateDesc ? ' border-red-400 ring-1 ring-red-300' : '')}
               placeholder="Descrição detalhada do material"
               aria-required="true"
+              autoComplete="off"
             />
+            {/* Sugestões de autocomplete */}
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <ul
+                ref={suggestionsRef}
+                className="absolute z-10 left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto text-sm"
+              >
+                {filteredSuggestions.map((suggestion, idx) => (
+                  <li
+                    key={suggestion.id}
+                    className={
+                      'px-3 py-2 cursor-pointer hover:bg-indigo-100 ' +
+                      (idx === highlightedIndex ? 'bg-indigo-100 font-semibold' : '')
+                    }
+                    onMouseDown={() => {
+                      setNewMaterialDesc(suggestion.description);
+                      setShowSuggestions(false);
+                      setHighlightedIndex(-1);
+                    }}
+                  >
+                    {suggestion.description}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {/* Feedback de duplicidade em tempo real */}
+            {isDuplicateDesc && (
+              <div className="text-xs text-red-600 mt-1">{UI_TEXT.errorMaterialExists}</div>
+            )}
           </div>
           <div>
-            <label htmlFor="newMaterialCode" className={labelClass}>{UI_TEXT.codeInputLabel}</label>
+            <label htmlFor="newMaterialCode" className={labelBase}>{UI_TEXT.codeInputLabel}</label>
             <input
               type="text"
               id="newMaterialCode"
               value={newMaterialCode}
               onChange={(e) => setNewMaterialCode(e.target.value)}
-              className={inputClass}
+              className={inputBase}
               placeholder="Ex: P-205"
             />
           </div>
           <button
             type="submit"
-            className={purpleGradientPrimary}
+            className={buttonPrimary}
             aria-label={UI_TEXT.addButtonLabel}
+            disabled={!!isDuplicateDesc}
           >
             {UI_TEXT.addButtonLabel}
           </button>
@@ -415,13 +509,13 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
         <h3 className="text-lg font-semibold text-indigo-600 mb-3">{UI_TEXT.importMaterialsSectionTitle}</h3> 
         <div className="space-y-3">
           <div>
-            <label htmlFor="material-import-file-input" className={`${labelClass} mb-1`}>{UI_TEXT.selectFileLabel}</label>
+            <label htmlFor="material-import-file-input" className={`${labelBase} mb-1`}>{UI_TEXT.selectFileLabel}</label>
             <input
               id="material-import-file-input"
               type="file"
               accept=".csv,.txt"
               onChange={handleFileSelect}
-              className={`${inputClass} p-0 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 transition-colors`}
+              className={`${inputBase} p-0 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 transition-colors`}
               aria-label={UI_TEXT.fileInputLabel}
             /> 
           </div>
@@ -438,12 +532,12 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
               className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
               aria-labelledby="csvHasHeaderLabelText"
             /> 
-            <label id="csvHasHeaderLabelText" htmlFor="csvHasHeader" className={`${labelClass} ml-2`}>{UI_TEXT.csvHasHeaderLabel}</label>
+            <label id="csvHasHeaderLabelText" htmlFor="csvHasHeader" className={`${labelBase} ml-2`}>{UI_TEXT.csvHasHeaderLabel}</label>
           </div>
           <button
             onClick={handleImportFile}
             disabled={!importFile || isImporting}
-            className={`${purpleGradientPrimary} w-full sm:w-auto`}
+            className={`${buttonPrimary} w-full sm:w-auto`}
             aria-label={isImporting ? UI_TEXT.importProcessing : UI_TEXT.importButtonLabel}
           >
             {isImporting ? UI_TEXT.importProcessing : UI_TEXT.importButtonLabel}
@@ -462,7 +556,7 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
         placeholder={UI_TEXT.searchMaterialsPlaceholder}
         value={searchTerm}
         onChange={handleSearchChange}
-        className={`${inputClass} mb-4 max-w-md`}
+        className={`${inputBase} mb-4 max-w-md`}
       />
 
       {filteredMaterials.length === 0 && !isImporting ? (
@@ -489,7 +583,7 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
                           type="text"
                           value={currentEdit.description || ''}
                           onChange={(e) => handleInputChangeForEdit('description', e.target.value)}
-                          className={`${inputClass} text-xs`}
+                          className={`${inputBase} text-xs`}
                           aria-required="true"
                         />
                       </td>
@@ -500,7 +594,7 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
                           type="text"
                           value={currentEdit.code || ''}
                           onChange={(e) => handleInputChangeForEdit('code', e.target.value)}
-                          className={`${inputClass} text-xs`}
+                          className={`${inputBase} text-xs`}
                         />
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-center space-x-2">
@@ -513,7 +607,7 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
                         </button>
                         <button
                           onClick={handleCancelEdit}
-                          className={`${purpleGradientLight.replace("py-2 px-4", "py-1.5 px-3").replace("font-medium", "font-normal text-xs")}`} 
+                          className={`${buttonLight.replace("py-2 px-4", "py-1.5 px-3").replace("font-medium", "font-normal text-xs")}`} 
                            aria-label={`${UI_TEXT.cancelEditButtonLabel} para ${currentEdit.description || material.description}`}
                         >
                           Cancelar
@@ -561,7 +655,7 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
             <button
               type="button"
               onClick={() => { setShowConfirmDeleteModal(false); setMaterialToDelete(null); }}
-              className={purpleGradientLight.replace("w-full ", "")}
+              className={buttonLight.replace("w-full ", "")}
               aria-label={UI_TEXT.cancelButton}
             >
               {UI_TEXT.cancelButton}
@@ -569,7 +663,7 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
             <button
               type="button"
               onClick={handleConfirmDelete}
-              className={redGradientDestructive}
+              className={buttonDanger}
               aria-label={UI_TEXT.confirmRemoveButton}
             >
               {UI_TEXT.confirmRemoveButton}

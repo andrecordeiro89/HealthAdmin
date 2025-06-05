@@ -25,8 +25,8 @@ export const HospitalSelector: React.FC<HospitalSelectorProps> = ({
   const [newHospitalName, setNewHospitalName] = useState<string>('');
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-10 px-2">
-      <h2 className="text-3xl font-bold text-indigo-700 mb-2 text-center">Selecione o Hospital</h2>
+    <div className="w-full min-h-screen flex flex-col items-center justify-start py-10 px-2 bg-transparent">
+      <h2 className="text-3xl sm:text-4xl font-extrabold text-indigo-700 tracking-tight mb-2 text-center">Selecione o Hospital</h2>
       <p className="text-base text-slate-500 mb-8 text-center">Escolha o hospital para iniciar o gerenciamento de documentos.</p>
       <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-10 px-2">
         {hospitals.map(h => (

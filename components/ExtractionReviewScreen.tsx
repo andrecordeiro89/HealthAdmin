@@ -27,7 +27,7 @@ const MaterialsTable: React.FC<{ materials: MaterialUsed[] }> = ({ materials }) 
   }
   return (
     <div className="mt-2 text-xs">
-      <h4 className="font-semibold text-indigo-600 mb-1">Materiais Utilizados:</h4> 
+      <h4 className="text-lg font-semibold text-indigo-600 mb-1">Materiais Utilizados:</h4> 
       <div className="max-h-32 overflow-y-auto bg-gray-50 p-1.5 rounded border border-gray-200">
         {materials.map((material, index) => (
           <div key={index} className={`py-1 ${index < materials.length -1 ? 'border-b border-gray-200' : ''}`}>
@@ -140,10 +140,11 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
   }
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-10 px-2">
+    <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-white via-indigo-50 to-purple-50 pt-8 px-2">
       {/* Cabeçalho simulando PDF (sem logo) */}
-      <div className="w-full max-w-4xl mx-auto text-center mb-6 flex flex-col items-center">
-        <h2 className="text-2xl sm:text-3xl font-bold text-indigo-800 mb-1">{hospitalName} <span className="block text-lg font-normal text-slate-500">Relatório de Consumo de Materiais</span></h2>
+      <div className="w-full max-w-3xl mx-auto text-center mb-8 flex flex-col items-center">
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-indigo-700 tracking-tight mb-2 text-center">{hospitalName}</h2>
+        <p className="text-lg font-normal text-slate-500 mb-4 text-center">Relatório de Consumo de Materiais</p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-slate-600 text-sm mb-1">
           <span><b>Data:</b> {new Date().toLocaleDateString()}</span>
           <span>|</span>
@@ -151,7 +152,7 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
         </div>
       </div>
       {/* Card resumo do lote */}
-      <div className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between bg-white/90 rounded-xl shadow-lg p-4 mb-8 border border-gray-200">
+      <div className="w-full max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between p-4 mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <span className="font-semibold text-indigo-700">{hospitalName}</span>
           <span className="text-slate-400 text-sm">|</span>
@@ -168,32 +169,32 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
       </div>
       {/* Tabela de Materiais Contaminados */}
       {contaminatedToShow.length > 0 && (
-        <div className="w-full max-w-5xl mx-auto bg-white rounded shadow-xl border-2 border-red-400 overflow-x-auto mb-8">
+        <div className="w-full max-w-5xl mx-auto overflow-x-auto mb-8">
           <h3 className="text-lg font-bold text-red-700 px-4 pt-4 pb-2 flex items-center gap-2">
             <svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6 text-red-500' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth='2'><path strokeLinecap='round' strokeLinejoin='round' d='M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' /></svg>
             Materiais Contaminados
           </h3>
           <table className="min-w-full text-sm text-left">
             <thead>
-              <tr className="bg-white border-b border-red-200">
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Descrição do Material</th>
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Código</th>
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Lote</th>
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Observação</th>
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Qtd. Consumida</th>
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-red-200">Qtd. para Reposição</th>
+              <tr className="bg-transparent border-b border-indigo-100">
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Descrição do Material</th>
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Código</th>
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Lote</th>
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Observação</th>
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Qtd. Consumida</th>
+                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Qtd. para Reposição</th>
                 <th className="px-4 py-3 font-bold text-red-700">Obs. Sistema</th>
               </tr>
             </thead>
             <tbody>
               {contaminatedToShow.map((mat, idx) => (
-                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-4 py-2 border-r border-red-200 font-medium text-red-800 align-top">{mat.description}</td>
-                  <td className="px-4 py-2 border-r border-red-200 text-red-700 align-top">{mat.code || <span className="italic text-red-400">-</span>}</td>
-                  <td className="px-4 py-2 border-r border-red-200 text-red-700 align-top">{mat.lotNumber || <span className="italic text-red-400">-</span>}</td>
-                  <td className="px-4 py-2 border-r border-red-200 text-red-600 align-top max-w-[200px] truncate" title={mat.observation || ''}>{mat.observation || <span className="italic text-red-400">-</span>}</td>
-                  <td className="px-4 py-2 border-r border-red-200 text-center text-red-700 font-semibold align-top">{mat.totalConsumedQuantity}</td>
-                  <td className="px-4 py-2 border-r border-red-200 text-center text-red-700 font-semibold align-top">{mat.replenishQuantity}</td>
+                <tr key={idx} className="bg-transparent">
+                  <td className="px-4 py-2 border-r border-indigo-100 font-medium text-red-800 align-top">{mat.description}</td>
+                  <td className="px-4 py-2 border-r border-indigo-100 text-red-700 align-top">{mat.code || <span className="italic text-red-400">-</span>}</td>
+                  <td className="px-4 py-2 border-r border-indigo-100 text-red-700 align-top">{mat.lotNumber || <span className="italic text-red-400">-</span>}</td>
+                  <td className="px-4 py-2 border-r border-indigo-100 text-red-600 align-top max-w-[200px] truncate" title={mat.observation || ''}>{mat.observation || <span className="italic text-red-400">-</span>}</td>
+                  <td className="px-4 py-2 border-r border-indigo-100 text-center text-red-700 font-semibold align-top">{mat.totalConsumedQuantity}</td>
+                  <td className="px-4 py-2 border-r border-indigo-100 text-center text-red-700 font-semibold align-top">{mat.replenishQuantity}</td>
                   <td className="px-4 py-2 text-xs text-red-600 align-top max-w-[180px] truncate" title={mat.replenishmentSuggestionNote || ''}>{mat.replenishmentSuggestionNote || '-'}</td>
                 </tr>
               ))}
@@ -202,16 +203,16 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
         </div>
       )}
       {/* Tabela simulando PDF */}
-      <div className="w-full max-w-5xl mx-auto bg-white rounded shadow-xl border border-gray-300 overflow-x-auto mb-8">
+      <div className="w-full max-w-5xl mx-auto overflow-x-auto mb-8">
         <table className="min-w-full text-sm text-left">
           <thead>
-            <tr className="bg-gray-100 border-b border-gray-300">
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Descrição do Material</th>
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Código</th>
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Lote</th>
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Observação</th>
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Qtd. Consumida</th>
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-gray-200">Qtd. para Reposição</th>
+            <tr className="bg-transparent border-b border-indigo-100">
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Descrição do Material</th>
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Código</th>
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Lote</th>
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Observação</th>
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Qtd. Consumida</th>
+              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Qtd. para Reposição</th>
               <th className="px-4 py-3 font-bold text-slate-700">Obs. Sistema</th>
             </tr>
           </thead>
@@ -220,13 +221,13 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
               <tr><td colSpan={7} className="text-center text-slate-400 py-6">Nenhum material processado para este lote.</td></tr>
             )}
             {materialsToShow.map((mat, idx) => (
-              <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                <td className="px-4 py-2 border-r border-gray-200 font-medium text-slate-700 align-top">{mat.description}</td>
-                <td className="px-4 py-2 border-r border-gray-200 text-slate-600 align-top">{mat.code || <span className="italic text-slate-400">-</span>}</td>
-                <td className="px-4 py-2 border-r border-gray-200 text-slate-600 align-top">{mat.lotNumber || <span className="italic text-slate-400">-</span>}</td>
-                <td className="px-4 py-2 border-r border-gray-200 text-slate-500 align-top max-w-[200px] truncate" title={mat.observation || ''}>{mat.observation || <span className="italic text-slate-400">-</span>}</td>
-                <td className="px-4 py-2 border-r border-gray-200 text-center text-indigo-700 font-semibold align-top">{mat.totalConsumedQuantity}</td>
-                <td className="px-4 py-2 border-r border-gray-200 text-center text-indigo-700 font-semibold align-top">{mat.replenishQuantity}</td>
+              <tr key={idx} className="bg-transparent">
+                <td className="px-4 py-2 border-r border-indigo-100 font-medium text-slate-700 align-top">{mat.description}</td>
+                <td className="px-4 py-2 border-r border-indigo-100 text-slate-600 align-top">{mat.code || <span className="italic text-slate-400">-</span>}</td>
+                <td className="px-4 py-2 border-r border-indigo-100 text-slate-600 align-top">{mat.lotNumber || <span className="italic text-slate-400">-</span>}</td>
+                <td className="px-4 py-2 border-r border-indigo-100 text-slate-500 align-top max-w-[200px] truncate" title={mat.observation || ''}>{mat.observation || <span className="italic text-slate-400">-</span>}</td>
+                <td className="px-4 py-2 border-r border-indigo-100 text-center text-indigo-700 font-semibold align-top">{mat.totalConsumedQuantity}</td>
+                <td className="px-4 py-2 border-r border-indigo-100 text-center text-indigo-700 font-semibold align-top">{mat.replenishQuantity}</td>
                 <td className="px-4 py-2 text-xs text-slate-500 align-top max-w-[180px] truncate" title={mat.replenishmentSuggestionNote || ''}>{mat.replenishmentSuggestionNote || '-'}</td>
               </tr>
             ))}
@@ -258,7 +259,7 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
               onClick={() => setShowDocsModal(false)}
               title="Fechar"
             >×</button>
-            <h3 className="text-lg font-bold text-indigo-700 mb-4">Detalhes dos Documentos Processados</h3>
+            <h3 className="text-lg font-semibold text-indigo-700 mb-4">Detalhes dos Documentos Processados</h3>
             <div className="max-h-96 overflow-y-auto divide-y divide-gray-200">
               {successfulDocs.map(doc => (
                 <div key={doc.id} className="py-2">
