@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ExtractedData, MaterialUsed } from '../types';
 import { UI_TEXT } from '../constants';
 import { inputBase, labelBase, buttonPrimary, buttonSecondary, buttonSize, cardLarge, sectionGap } from './uiClasses';
+import MaterialCard from './MaterialCard';
 
 interface OrderFormProps {
   initialData: ExtractedData;
@@ -144,10 +145,14 @@ interface MaterialsUsedSectionProps {
 const MaterialsUsedSection: React.FC<MaterialsUsedSectionProps> = (props) => {
   const { materialsUsed, onMaterialChange, onAddMaterial, onRemoveMaterial, addMaterialButtonClass, materialDbItems = [] } = props;
 
-  const inputClass = inputBase;
-  const labelClass = labelBase;
+  const inputClass = inputBase +
+    " h-12 rounded-lg border-2 border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all text-base placeholder-slate-400";
+  const labelClass = labelBase + " text-slate-700 font-semibold mb-1 flex items-center gap-1";
   const textAreaClass = inputClass + " min-h-[60px]";
-  const removeMaterialButtonClass = "absolute top-2 right-2 p-1.5 rounded-full text-white bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 focus:ring-offset-white transition-all duration-150 z-10";
+  const removeMaterialButtonClass =
+    "absolute top-3 right-3 p-2 rounded-full text-white bg-gradient-to-br from-red-500 to-rose-600 shadow-md hover:scale-110 hover:from-red-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 transition-all duration-150 z-10";
+  const badgeClass =
+    "inline-block px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs ml-2 font-bold tracking-wide";
 
   // Autocomplete e validação para cada campo de descrição
   const [showSuggestions, setShowSuggestions] = useState<number | null>(null);
@@ -174,153 +179,30 @@ const MaterialsUsedSection: React.FC<MaterialsUsedSectionProps> = (props) => {
   }, [showSuggestions]);
 
   return (
-    <fieldset className="space-y-6 p-4 sm:p-6 border border-gray-200 rounded-md bg-gray-50">
-      <legend className="text-2xl sm:text-3xl font-bold text-indigo-700 px-2 mb-4">{UI_TEXT.materialsUsedSection}</legend> 
-      {materialsUsed.map((material, index) => {
-        // Sugestões filtradas para autocomplete
-        const filteredSuggestions = useMemo(() => {
-          const desc = material.description.trim().toLowerCase();
-          if (!desc) return [];
-          return materialDbItems.filter(m => m.description.toLowerCase().includes(desc));
-        }, [material.description, materialDbItems]);
-        // Duplicidade em tempo real
-        const isDuplicateDesc = useMemo(() => {
-          const desc = material.description.trim().toLowerCase();
-          return desc && materialDbItems.some(m => m.description.toLowerCase() === desc);
-        }, [material.description, materialDbItems]);
-        return (
-          <div key={index} className={`p-4 border border-gray-200 rounded-md space-y-4 relative bg-white ${index % 2 === 0 ? '' : 'bg-gray-50'}`}> 
-            {materialsUsed.length > 0 && ( 
-               <button 
-                  type="button" 
-                  onClick={() => onRemoveMaterial(index)} 
-                  className={removeMaterialButtonClass}
-                  aria-label="Remover material"
-                  title="Remover material"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c1.153 0 2.24.086 3.223.244L6.75 5.79m12.506 0l-2.828-2.828A2.25 2.25 0 0015.025 2.25H8.975a2.25 2.25 0 00-1.591.659L4.558 5.79m3.839 11.25H15.17" />
-                  </svg>
-                </button>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-              <div className="md:col-span-2 relative">
-                <label htmlFor={`materialDescription-${index}`} className={labelClass}>Descrição do Material</label>
-                <input
-                  type="text"
-                  id={`materialDescription-${index}`}
-                  value={material.description}
-                  onChange={(e) => {
-                    onMaterialChange(index, { ...material, description: e.target.value });
-                    setShowSuggestions(index);
-                    setHighlightedIndex(-1);
-                  }}
-                  onFocus={() => setShowSuggestions(index)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(null), 150)}
-                  onKeyDown={(e) => {
-                    if (showSuggestions !== index || filteredSuggestions.length === 0) return;
-                    if (e.key === 'ArrowDown') {
-                      e.preventDefault();
-                      setHighlightedIndex((prev) => (prev + 1) % filteredSuggestions.length);
-                    } else if (e.key === 'ArrowUp') {
-                      e.preventDefault();
-                      setHighlightedIndex((prev) => (prev - 1 + filteredSuggestions.length) % filteredSuggestions.length);
-                    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
-                      e.preventDefault();
-                      onMaterialChange(index, { ...material, description: filteredSuggestions[highlightedIndex].description });
-                      setShowSuggestions(null);
-                      setHighlightedIndex(-1);
-                    }
-                  }}
-                  className={inputClass + (isDuplicateDesc ? ' border-red-400 ring-1 ring-red-300' : '')}
-                  required
-                  autoComplete="off"
-                />
-                {/* Sugestões de autocomplete */}
-                {showSuggestions === index && filteredSuggestions.length > 0 && (
-                  <ul
-                    ref={suggestionsRef}
-                    className="absolute z-10 left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto text-sm"
-                  >
-                    {filteredSuggestions.map((suggestion, idx) => (
-                      <li
-                        key={suggestion.id}
-                        className={
-                          'px-3 py-2 cursor-pointer hover:bg-indigo-100 ' +
-                          (idx === highlightedIndex ? 'bg-indigo-100 font-semibold' : '')
-                        }
-                        onMouseDown={() => {
-                          onMaterialChange(index, { ...material, description: suggestion.description });
-                          setShowSuggestions(null);
-                          setHighlightedIndex(-1);
-                        }}
-                      >
-                        {suggestion.description}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {/* Feedback de duplicidade em tempo real */}
-                {isDuplicateDesc && (
-                  <div className="text-sm text-red-600 mt-1">{UI_TEXT.errorMaterialExists}</div>
-                )}
-              </div>
-              <div>
-                <label htmlFor={`materialQuantity-${index}`} className={labelClass}>Quantidade</label>
-                <input
-                  type="number"
-                  id={`materialQuantity-${index}`}
-                  value={material.quantity}
-                  onChange={(e) => onMaterialChange(index, { ...material, quantity: parseInt(e.target.value) || 0 })}
-                  min="0" 
-                  className={inputClass}
-                  required
-                />
-              </div>
-              <div className="md:col-span-1">
-                 <label htmlFor={`materialCode-${index}`} className={labelClass}>Código (Opcional)</label>
-                <input
-                  type="text"
-                  id={`materialCode-${index}`}
-                  value={material.code || ''}
-                  onChange={(e) => onMaterialChange(index, { ...material, code: e.target.value || null })}
-                  className={inputClass}
-                  placeholder="Ex: P-205"
-                />
-              </div>
-               <div className="md:col-span-1">
-                 <label htmlFor={`materialLotNumber-${index}`} className={labelClass}>Lote (Opcional)</label>
-                <input
-                  type="text"
-                  id={`materialLotNumber-${index}`}
-                  value={material.lotNumber || ''}
-                  onChange={(e) => onMaterialChange(index, { ...material, lotNumber: e.target.value || null })}
-                  className={inputClass}
-                  placeholder="Ex: LOTE123"
-                />
-              </div>
-               <div className="md:col-span-1">
-                 <label htmlFor={`materialObservation-${index}`} className={labelClass}>Observação (Opcional)</label>
-                  <textarea
-                      id={`materialObservation-${index}`}
-                      value={material.observation || ''}
-                      onChange={(e) => onMaterialChange(index, { ...material, observation: e.target.value || null })}
-                      className={inputClass + " min-h-[40px]"}
-                      placeholder="Ex: Item de teste"
-                      rows={1}
-                  />
-              </div>
-            </div>
-          </div>
-        );
-      })}
-      <button 
-        type="button" 
-        onClick={onAddMaterial} 
-        className={addMaterialButtonClass}
+    <fieldset className="space-y-8 p-6 sm:p-8 border-2 border-indigo-100 rounded-2xl bg-white shadow-lg">
+      <legend className="text-3xl font-extrabold text-indigo-800 px-2 mb-6 tracking-tight flex items-center gap-2">
+        {UI_TEXT.materialsUsedSection}
+      </legend>
+      {materialsUsed.map((material, index) => (
+        <MaterialCard
+          key={index}
+          material={material}
+          index={index}
+          onMaterialChange={onMaterialChange}
+          onRemoveMaterial={onRemoveMaterial}
+          materialDbItems={materialDbItems}
+          badgeClass={badgeClass}
+          removeMaterialButtonClass={removeMaterialButtonClass}
+        />
+      ))}
+      <button
+        type="button"
+        onClick={onAddMaterial}
+        className={addMaterialButtonClass +
+          " mt-6 flex items-center justify-center w-full gap-2 py-3 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-bold text-lg shadow-md hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 transition-all duration-150 animate-fade-in"}
         title="Adicionar novo material"
-      > 
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 mr-2">
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
         Adicionar Material

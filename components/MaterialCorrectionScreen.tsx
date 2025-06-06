@@ -4,6 +4,7 @@ import { UI_TEXT } from '../constants';
 import { Alert, AlertType } from './Alert';
 import { Modal } from './Modal';
 import { tableHeader, tableCell, zebraRow, buttonPrimary, buttonLight, buttonSecondary, inputBase, buttonSize, cardLarge, cardBase, sectionGap } from './uiClasses';
+import CheckCircleIcon from '@heroicons/react/24/solid/CheckCircleIcon';
 
 interface MaterialCorrectionScreenProps {
   hospitalName: string;
@@ -48,6 +49,8 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
   const [newQuickMaterialCode, setNewQuickMaterialCode] = useState('');
   const [addMaterialError, setAddMaterialError] = useState<string | null>(null);
   const [showFooterButtons, setShowFooterButtons] = useState(false);
+  const [showSuccessTooltip, setShowSuccessTooltip] = useState<{key: string, message: string} | null>(null);
+  const [highlightedNewMaterialId, setHighlightedNewMaterialId] = useState<string | null>(null);
 
   // Placeholders for UI_TEXT that would be in constants.ts
   const patientNameLabel = "Nome do Paciente";
@@ -366,53 +369,56 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
       {/* Conteúdo principal da tela */}
       <div className={"flex-1 w-full h-full flex flex-row font-['Inter','Roboto','Montserrat',sans-serif] " + sectionGap} style={{paddingBottom: '120px'}}>
         {/* Coluna esquerda: Lista de pacientes e busca */}
-        <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%)'}}>
-          <div className="bg-gray-50 rounded-2xl shadow-md mx-2 mt-6 mb-4 flex flex-col gap-2 pb-4">
-            <div className="flex flex-col gap-2 mb-4 mt-4">
+        <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0">
+          <div className="bg-white/90 rounded-3xl shadow-2xl mx-3 mt-8 mb-6 flex flex-col gap-3 pb-6 border border-indigo-100 transition-all duration-300">
+            <div className="flex flex-col gap-3 mb-5 mt-6 px-4">
               <button
                 onClick={() => setShowStatusModal(true)}
-                className={"px-3 py-2 rounded-lg font-bold bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-sm shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 max-w-[210px] mx-auto w-full"}
-                style={{minHeight: '36px'}}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-base shadow-lg hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200 max-w-[220px] mx-auto w-full"
+                style={{minHeight: '40px'}}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 Ver detalhes dos documentos
               </button>
               <button
                 onClick={onRetryErroredDocuments}
                 disabled={docsComErro.length === 0}
-                className={"px-3 py-2 rounded-lg font-bold bg-gradient-to-br from-red-500 to-red-700 text-white text-sm shadow hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed max-w-[210px] mx-auto w-full"}
-                style={{minHeight: '36px'}}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold bg-gradient-to-br from-red-500 to-red-700 text-white text-base shadow-lg hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 max-w-[220px] mx-auto w-full"
+                style={{minHeight: '40px'}}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 Reprocessar documentos com erro
               </button>
             </div>
-            <div className="p-4 pb-2">
-              <label className="block text-base text-slate-600 font-semibold mb-1">Localizar Paciente</label>
+            <div className="px-5 pb-2">
+              <label className="block text-base text-slate-600 font-semibold mb-2 tracking-wide">Localizar Paciente</label>
               <input
                 type="text"
                 placeholder="Buscar paciente..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className={inputBase + " w-full px-4 py-2 text-base font-medium text-slate-800 placeholder:text-slate-400 bg-white"}
+                className={inputBase + " w-full px-4 py-2 text-base font-medium text-slate-800 placeholder:text-slate-400 bg-white rounded-lg shadow focus:ring-2 focus:ring-indigo-400 border border-indigo-200 transition-all duration-200"}
               />
             </div>
-            <div className="px-2 pb-2">
+            <div className="px-3 pb-2">
               {filteredPatientGroups.length === 0 ? (
                 <p className="text-base text-slate-600 text-center mt-8 font-semibold">Nenhum paciente encontrado.</p>
               ) : (
-                <ul className="space-y-3 mt-2">
+                <ul className="space-y-3 mt-3">
                   {filteredPatientGroups.map(patientKey => (
                     <li key={patientKey}>
                       <button
                         className={
-                          `w-full text-left px-4 py-3 rounded-lg font-bold transition border-2 focus:outline-none tracking-wide text-base shadow-sm ` +
+                          `w-full text-left px-5 py-3 rounded-xl font-bold transition border-2 focus:outline-none tracking-wide text-base shadow-md flex items-center gap-2 ` +
                           (patientKey === searchTerm
-                            ? 'bg-gradient-to-br from-purple-600 to-indigo-700 text-white border-indigo-900 ring-2 ring-indigo-400'
-                            : 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white border-transparent hover:from-purple-600 hover:to-indigo-700')
+                            ? 'bg-gradient-to-br from-purple-700 to-indigo-800 text-white border-indigo-900 ring-2 ring-indigo-400 scale-[1.03]'
+                            : 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white border-transparent hover:from-purple-600 hover:to-indigo-700 hover:scale-[1.02]')
                         }
                         onClick={() => setSearchTerm(patientKey)}
                         style={{letterSpacing: '0.02em'}}
                         title={patientKey === searchTerm ? 'Paciente selecionado' : 'Selecionar paciente'}
                       >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         {patientKey}
                       </button>
                     </li>
@@ -431,66 +437,58 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
               {groupedEditableDocs[patientKey]?.map(doc => (
                 <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0 bg-white/90 rounded-xl shadow-xl p-6">
                   <div className="flex items-center gap-4 mb-2">
-                    <span className="text-slate-700 text-sm font-semibold">{doc.fileName}</span>
-                    {doc.imagePreviewUrl && (
-                      <button
-                        onClick={() => handleViewDocument(doc.id)}
-                        className={"ml-2 px-3 py-1.5 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-xs font-bold shadow hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 " + buttonSize}
-                      >Visualizar</button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Nome do Paciente</label>
-                      <input
-                        type="text"
-                        value={doc.extractedData?.patientName || ''}
-                        onChange={e => handlePatientNameChange(doc.id, e.target.value)}
-                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-2"
-                        placeholder="Nome do paciente"
-                      />
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Data de Nascimento</label>
+                    <div className="flex flex-col gap-2 mb-8">
+                      <div className="flex flex-row items-center gap-4 mb-2">
+                        <h2 className="text-2xl font-extrabold text-indigo-700 uppercase truncate">{doc.extractedData?.patientName || 'Paciente'}</h2>
+                        {doc.imagePreviewUrl && (
+                          <button
+                            onClick={() => handleViewDocument(doc.id)}
+                            className="px-6 py-2 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-lg font-bold shadow-lg hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                          >
+                            Visualizar
+                          </button>
+                        )}
+                      </div>
+                      <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Data de Nascimento</label>
                       <input
                         type="text"
                         value={doc.extractedData?.patientDOB || ''}
                         onChange={e => handlePatientInfoChange(doc.id, 'patientDOB', e.target.value)}
-                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-2"
+                        className="w-full max-w-[480px] px-5 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg font-semibold text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
                         placeholder="Data de nascimento"
                       />
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Data da Cirurgia</label>
+                      <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Data da Cirurgia</label>
                       <input
                         type="text"
                         value={doc.extractedData?.surgeryDate || ''}
                         onChange={e => handlePatientInfoChange(doc.id, 'surgeryDate', e.target.value)}
-                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-2"
+                        className="w-full max-w-[480px] px-5 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg font-semibold text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
                         placeholder="Data da cirurgia"
                       />
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Procedimento</label>
+                      <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Procedimento</label>
                       <input
                         type="text"
                         value={doc.extractedData?.procedureName || ''}
                         onChange={e => handlePatientInfoChange(doc.id, 'procedureName', e.target.value)}
-                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-2"
+                        className="w-full max-w-[480px] px-5 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg font-semibold text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
                         placeholder="Procedimento"
                       />
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Médico Responsável</label>
+                      <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Médico Responsável</label>
                       <input
                         type="text"
                         value={doc.extractedData?.doctorName || ''}
                         onChange={e => handlePatientInfoChange(doc.id, 'doctorName', e.target.value)}
-                        className="w-full px-3 py-2 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-semibold text-slate-700 mb-2"
+                        className="w-full max-w-[480px] px-5 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg font-semibold text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
                         placeholder="Médico responsável"
                       />
-                    </div>
-                    <div>
-                      {/* Espaço reservado para possíveis dados adicionais do paciente */}
                     </div>
                   </div>
                   <div className="mb-4">
                     <h4 className="text-lg font-bold text-indigo-700 mb-2">Materiais Utilizados</h4>
                     {doc.extractedData?.materialsUsed.map((material, index) => (
-                      <div key={index} className={`mb-4 p-4 rounded-lg bg-gradient-to-br from-white via-indigo-50 to-purple-50 border border-indigo-100 shadow-sm ${material.contaminated ? 'ring-2 ring-red-400 bg-red-50/40' : ''}`}>
-                        <div className="flex items-center mb-2">
+                      <div key={index} className={`mb-6 p-7 rounded-2xl border border-indigo-100 shadow-lg bg-gradient-to-br from-white via-indigo-50 to-white/90 transition-all duration-300 ${material.contaminated ? 'ring-2 ring-red-400 bg-gradient-to-br from-red-50/70 to-white/90' : ''}`}> 
+                        {/* Header premium: Checkbox Contaminado no topo à esquerda */}
+                        <div className="flex items-center mb-5 gap-3">
                           <input
                             type="checkbox"
                             checked={!!material.contaminated}
@@ -509,173 +507,152 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                                 })
                               );
                             }}
-                            className="mr-2 accent-red-500 w-5 h-5"
+                            className="accent-red-500 w-5 h-5 mr-2 rounded-lg border-2 border-red-300 shadow focus:ring-2 focus:ring-red-400 transition-all duration-200"
                             id={`contaminated-${doc.id}-${index}`}
                           />
-                          <label htmlFor={`contaminated-${doc.id}-${index}`} className="text-xs font-semibold text-red-600 flex items-center cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            Contaminado
-                          </label>
+                          <label htmlFor={`contaminated-${doc.id}-${index}`} className="text-red-600 font-semibold text-base cursor-pointer select-none tracking-wide">Contaminado</label>
+                          {material.contaminated && (
+                            <span className="inline-block px-3 py-1 bg-gradient-to-r from-red-200 via-red-100 to-white text-red-700 rounded-full text-xs ml-2 font-bold tracking-wide shadow-sm border border-red-200" title="Material contaminado">Contaminado</span>
+                          )}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Descrição</label>
-                            <div className="relative flex items-center gap-1">
-                              <input
-                                type="text"
-                                value={material.description}
-                                onChange={e => {
-                                  handleMaterialChange(doc.id, index, 'description', e.target.value);
-                                  setShowSuggestionIdx(doc.id + '-' + index);
-                                  setHighlightedIdx(-1);
-                                }}
-                                onFocus={() => {
-                                  if (material.description) setShowSuggestionIdx(doc.id + '-' + index);
-                                }}
-                                onBlur={() => setTimeout(() => setShowSuggestionIdx(null), 150)}
-                                onKeyDown={e => {
-                                  const filtered = materialDbItems.filter(m => m.description.toLowerCase().includes((material.description || '').toLowerCase()));
-                                  if (showSuggestionIdx !== doc.id + '-' + index || filtered.length === 0) return;
-                                  if (e.key === 'ArrowDown') {
-                                    e.preventDefault();
-                                    setHighlightedIdx(prev => (prev + 1) % filtered.length);
-                                  } else if (e.key === 'ArrowUp') {
-                                    e.preventDefault();
-                                    setHighlightedIdx(prev => (prev - 1 + filtered.length) % filtered.length);
-                                  } else if (e.key === 'Enter' && highlightedIdx >= 0) {
-                                    e.preventDefault();
-                                    handleMaterialChange(doc.id, index, 'description', filtered[highlightedIdx].description);
-                                    setShowSuggestionIdx(null);
-                                    setHighlightedIdx(-1);
-                                  }
-                                }}
-                                className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
-                                autoComplete="off"
-                              />
-                              {/* Botão + para cadastro rápido */}
-                              {material.description && !materialDbItems.some(m => m.description.toLowerCase() === material.description.toLowerCase()) && onMaterialDbUpdate && (
-                                <button
-                                  type="button"
-                                  className="ml-1 text-indigo-600 text-base font-medium hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer bg-transparent border-none p-0 m-0"
-                                  title="Cadastrar novo material"
-                                  onClick={() => {
-                                    setShowAddMaterialModal({ docId: doc.id, index, desc: material.description });
-                                    setNewQuickMaterialCode('');
-                                    setAddMaterialError(null);
-                                  }}
-                                  style={{minWidth: '0', boxShadow: 'none'}}
-                                >+
-                                </button>
-                              )}
-                              {/* Modal de cadastro rápido */}
-                              {showAddMaterialModal && showAddMaterialModal.docId === doc.id && showAddMaterialModal.index === index && (
-                                <Modal isOpen={true} onClose={() => setShowAddMaterialModal(null)} title="Cadastrar novo material" size="sm">
-                                  <form
-                                    onSubmit={e => {
-                                      e.preventDefault();
-                                      const desc = showAddMaterialModal.desc.trim();
-                                      const code = newQuickMaterialCode.trim();
-                                      if (!desc) {
-                                        setAddMaterialError('Descrição obrigatória.');
-                                        return;
-                                      }
-                                      if (materialDbItems.some(m => m.description.toLowerCase() === desc.toLowerCase() || (code && m.code && m.code.toLowerCase() === code.toLowerCase()))) {
-                                        setAddMaterialError('Já existe material com essa descrição ou código.');
-                                        return;
-                                      }
-                                      const newMaterial = {
-                                        id: `db-mat-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-                                        description: desc,
-                                        code: code || '',
-                                      };
-                                      onMaterialDbUpdate?.([
-                                        ...materialDbItems,
-                                        newMaterial
-                                      ].sort((a, b) => a.description.localeCompare(b.description)));
-                                      handleMaterialChange(doc.id, index, 'description', desc);
-                                      setShowAddMaterialModal(null);
-                                    }}
-                                    className="space-y-3"
-                                  >
-                                    <div>
-                                      <label className="block text-xs font-semibold text-slate-500 mb-1">Descrição</label>
-                                      <input type="text" value={showAddMaterialModal.desc} disabled className="w-full px-2 py-1.5 rounded border border-gray-300 bg-gray-100 text-sm" />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs font-semibold text-slate-500 mb-1">Código (opcional)</label>
-                                      <input type="text" value={newQuickMaterialCode} onChange={e => setNewQuickMaterialCode(e.target.value)} className="w-full px-2 py-1.5 rounded border border-gray-300 text-sm" />
-                                    </div>
-                                    {addMaterialError && <div className="text-xs text-red-600">{addMaterialError}</div>}
-                                    <div className="flex justify-end gap-2 pt-2">
-                                      <button type="button" onClick={() => setShowAddMaterialModal(null)} className="px-3 py-1 rounded bg-gray-200 text-gray-700 font-medium">Cancelar</button>
-                                      <button type="submit" className="px-3 py-1 rounded bg-gradient-to-br from-green-500 to-green-700 text-white font-bold">Cadastrar</button>
-                                    </div>
-                                  </form>
-                                </Modal>
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Código</label>
+                        {/* Linha premium dos campos principais */}
+                        <div className="grid grid-cols-12 gap-5 items-end">
+                          {/* Descrição + Botão + Autocomplete */}
+                          <div className="col-span-6 relative flex items-center">
+                            <label className="sr-only" htmlFor={`desc-${doc.id}-${index}`}>Descrição</label>
                             <input
+                              id={`desc-${doc.id}-${index}`}
+                              type="text"
+                              value={material.description}
+                              onChange={e => {
+                                handleMaterialChange(doc.id, index, 'description', e.target.value);
+                                setShowSuggestionIdx(doc.id + '-' + index);
+                                setHighlightedIdx(-1);
+                              }}
+                              onFocus={() => setShowSuggestionIdx(doc.id + '-' + index)}
+                              onBlur={() => setTimeout(() => setShowSuggestionIdx(null), 150)}
+                              onKeyDown={e => {
+                                const filtered = materialDbItems.filter(m => m.description.toLowerCase().includes((material.description || '').toLowerCase()));
+                                if (showSuggestionIdx !== doc.id + '-' + index || filtered.length === 0) return;
+                                if (e.key === 'ArrowDown') {
+                                  e.preventDefault();
+                                  setHighlightedIdx(prev => (prev + 1) % filtered.length);
+                                } else if (e.key === 'ArrowUp') {
+                                  e.preventDefault();
+                                  setHighlightedIdx(prev => (prev - 1 + filtered.length) % filtered.length);
+                                } else if (e.key === 'Enter' && highlightedIdx >= 0) {
+                                  e.preventDefault();
+                                  handleMaterialChange(doc.id, index, 'description', filtered[highlightedIdx].description);
+                                  setShowSuggestionIdx(null);
+                                  setHighlightedIdx(-1);
+                                }
+                              }}
+                              className="w-full px-4 py-2 rounded-lg border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-medium text-slate-700 bg-white shadow-sm transition-all duration-200 hover:border-indigo-400"
+                              autoComplete="off"
+                              placeholder="Descrição do material"
+                            />
+                            {/* Botão + minimalista */}
+                            {onMaterialDbUpdate && (
+                              <button
+                                type="button"
+                                className="ml-2 text-indigo-700 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-indigo-400 hover:text-indigo-900 transition"
+                                title="Cadastrar novo material"
+                                onClick={() => {
+                                  setShowAddMaterialModal({ docId: doc.id, index, desc: material.description });
+                                  setNewQuickMaterialCode('');
+                                  setAddMaterialError(null);
+                                }}
+                                style={{background: 'none', border: 'none', boxShadow: 'none', minWidth: 0, padding: 0, lineHeight: 1}}
+                              >+
+                              </button>
+                            )}
+                            {/* Autocomplete dropdown */}
+                            {showSuggestionIdx === doc.id + '-' + index && (
+                              <ul
+                                ref={suggestionsRef}
+                                className="absolute top-full left-0 right-0 z-10 bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto text-sm"
+                              >
+                                {materialDbItems
+                                  .filter(m => m.description.toLowerCase().includes((material.description || '').toLowerCase()))
+                                  .map((suggestion, idx) => (
+                                    <li
+                                      key={suggestion.id}
+                                      className={
+                                        'px-3 py-2 cursor-pointer hover:bg-indigo-100 ' +
+                                        (idx === highlightedIdx ? 'bg-indigo-100 font-semibold' : '') +
+                                        (highlightedNewMaterialId === suggestion.id ? ' bg-green-100 font-bold ring-2 ring-green-300' : '')
+                                      }
+                                      onMouseDown={() => {
+                                        handleMaterialChange(doc.id, index, 'description', suggestion.description);
+                                        setShowSuggestionIdx(null);
+                                        setHighlightedIdx(-1);
+                                      }}
+                                    >
+                                      {suggestion.description}
+                                    </li>
+                                  ))}
+                              </ul>
+                            )}
+                          </div>
+                          {/* Código */}
+                          <div className="col-span-3">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1" htmlFor={`code-${doc.id}-${index}`}>Código</label>
+                            <input
+                              id={`code-${doc.id}-${index}`}
                               type="text"
                               value={material.code || ''}
                               onChange={e => handleMaterialChange(doc.id, index, 'code', e.target.value)}
-                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
-                              placeholder="Código do material"
+                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700"
+                              placeholder="Código"
                             />
                           </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Quantidade</label>
+                          {/* Quantidade */}
+                          <div className="col-span-2">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1" htmlFor={`qty-${doc.id}-${index}`}>Qtd</label>
                             <input
+                              id={`qty-${doc.id}-${index}`}
                               type="number"
                               min="1"
                               value={material.quantity}
                               onChange={e => handleMaterialChange(doc.id, index, 'quantity', e.target.value)}
-                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
+                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700"
                             />
                           </div>
+                          {/* Botão Remover */}
+                          <div className="col-span-1 flex justify-end items-center">
+                            <button
+                              onClick={() => handleRemoveMaterial(doc.id, index)}
+                              className="px-2 py-1 rounded bg-gradient-to-br from-red-500 to-red-700 text-white text-xs font-bold shadow hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400"
+                              title="Remover material"
+                            >Remover</button>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Lote</label>
+                        {/* Linha premium abaixo para Lote e Observação */}
+                        <div className="grid grid-cols-12 gap-4 mt-2">
+                          {/* Lote */}
+                          <div className="col-span-6">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1" htmlFor={`lot-${doc.id}-${index}`}>Lote</label>
                             <input
+                              id={`lot-${doc.id}-${index}`}
                               type="text"
                               value={material.lotNumber || ''}
                               onChange={e => handleMaterialChange(doc.id, index, 'lotNumber', e.target.value)}
-                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
+                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700"
                               placeholder="Lote"
                             />
                           </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Observação</label>
-                            {/* Sugestão da IA, se houver */}
-                            {material.observacaoOcr && (
-                              <div className="mb-1 flex items-center gap-2">
-                                <span className="font-semibold text-slate-700 bg-indigo-50 px-2 py-0.5 rounded">Sugestão da IA: {material.observacaoOcr}</span>
-                                {(!material.observacaoUsuario || material.observacaoUsuario.trim() === '') && (
-                                  <button
-                                    type="button"
-                                    className="text-xs text-indigo-600 font-semibold hover:underline focus:outline-none"
-                                    onClick={() => handleMaterialChange(doc.id, index, 'observacaoUsuario', material.observacaoOcr || '')}
-                                  >Aceitar sugestão da IA</button>
-                                )}
-                              </div>
-                            )}
+                          {/* Observação */}
+                          <div className="col-span-6">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1" htmlFor={`obs-${doc.id}-${index}`}>Observação</label>
                             <input
+                              id={`obs-${doc.id}-${index}`}
                               type="text"
                               value={material.observacaoUsuario || ''}
                               onChange={e => handleMaterialChange(doc.id, index, 'observacaoUsuario', e.target.value)}
-                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700 mb-2"
+                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700"
                               placeholder="Observação"
                             />
                           </div>
-                        </div>
-                        <div className="flex justify-end mt-2">
-                          <button
-                            onClick={() => handleRemoveMaterial(doc.id, index)}
-                            className="px-3 py-1.5 rounded bg-gradient-to-br from-red-500 to-red-700 text-white text-xs font-bold shadow hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 ml-2"
-                          >Remover Material</button>
                         </div>
                       </div>
                     ))}
@@ -710,6 +687,56 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
               </div>
             )}
           </div>
+        </Modal>
+      )}
+      {/* Modal de cadastro rápido: apenas campos de código e descrição, visual simples e elegante */}
+      {showAddMaterialModal && (
+        <Modal isOpen={true} onClose={() => setShowAddMaterialModal(null)} title="Cadastrar novo material" size="sm">
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              const desc = showAddMaterialModal.desc.trim();
+              const code = newQuickMaterialCode.trim();
+              if (!desc) {
+                setAddMaterialError('Descrição obrigatória.');
+                return;
+              }
+              if (materialDbItems.some(m => m.description.toLowerCase() === desc.toLowerCase() || (code && m.code && m.code.toLowerCase() === code.toLowerCase()))) {
+                setAddMaterialError('Já existe material com essa descrição ou código.');
+                return;
+              }
+              const newMaterial = {
+                id: `db-mat-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                description: desc,
+                code: code || '',
+              };
+              onMaterialDbUpdate?.([
+                ...materialDbItems,
+                newMaterial
+              ].sort((a, b) => a.description.localeCompare(b.description)));
+              handleMaterialChange(showAddMaterialModal.docId, showAddMaterialModal.index, 'description', desc);
+              setShowAddMaterialModal(null);
+              setShowSuccessTooltip({key: showAddMaterialModal.docId + '-' + showAddMaterialModal.index, message: 'Material cadastrado com sucesso!'});
+              setHighlightedNewMaterialId(newMaterial.id);
+              setTimeout(() => setHighlightedNewMaterialId(null), 1000);
+              setTimeout(() => setShowSuccessTooltip(null), 2500);
+            }}
+            className="space-y-4 p-2"
+          >
+            <div className="mb-2">
+              <label className="block text-xs font-semibold text-indigo-700 mb-1">Descrição</label>
+              <input type="text" value={showAddMaterialModal.desc} onChange={e => setShowAddMaterialModal(modal => modal ? {...modal, desc: e.target.value} : null)} className="w-full px-2 py-1.5 rounded border border-indigo-200 bg-white text-sm text-slate-700 font-semibold" />
+            </div>
+            <div className="mb-2">
+              <label className="block text-xs font-semibold text-indigo-700 mb-1">Código (opcional)</label>
+              <input type="text" value={newQuickMaterialCode} onChange={e => setNewQuickMaterialCode(e.target.value)} className="w-full px-2 py-1.5 rounded border border-indigo-200 text-sm" placeholder="Ex: P-205" />
+            </div>
+            {addMaterialError && <div className="text-xs text-red-600 font-semibold mb-2">{addMaterialError}</div>}
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={() => setShowAddMaterialModal(null)} className="px-4 py-1.5 rounded font-semibold bg-gradient-to-br from-gray-200 to-gray-100 text-slate-700 hover:from-gray-300 hover:to-gray-200 transition">Cancelar</button>
+              <button type="submit" className="px-4 py-1.5 rounded font-bold bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">Cadastrar</button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>

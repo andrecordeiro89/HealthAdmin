@@ -44,6 +44,89 @@ const MaterialsTable: React.FC<{ materials: MaterialUsed[] }> = ({ materials }) 
   );
 };
 
+// Novo componente para tabela de materiais contaminados
+const ContaminatedMaterialsTable: React.FC<{ contaminatedToShow: ReplenishmentMaterial[] }> = ({ contaminatedToShow }) => (
+  <div className="w-full max-w-5xl mx-auto overflow-x-auto mb-8">
+    <h3 className="text-2xl font-extrabold text-red-700 px-4 pt-4 pb-2 flex items-center gap-2 tracking-tight">
+      <svg xmlns='http://www.w3.org/2000/svg' className='h-7 w-7 text-red-500' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth='2'><path strokeLinecap='round' strokeLinejoin='round' d='M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' /></svg>
+      Materiais Contaminados
+    </h3>
+    <div className="rounded-2xl shadow-xl border-2 border-red-200 bg-white/90 overflow-hidden animate-fade-in">
+      <table className="min-w-full text-sm text-left">
+        <thead>
+          <tr className="bg-gradient-to-r from-red-50 to-white border-b-2 border-red-200">
+            <th className="px-4 py-3 font-bold text-red-700 border-r border-red-100 uppercase tracking-wide">Descrição do Material</th>
+            <th className="px-4 py-3 font-bold text-red-700 border-r border-red-100 uppercase tracking-wide">Código</th>
+            <th className="px-4 py-3 font-bold text-red-700 border-r border-red-100 uppercase tracking-wide">Lote</th>
+            <th className="px-4 py-3 font-bold text-red-700 border-r border-red-100 uppercase tracking-wide">Observação</th>
+            <th className="px-4 py-3 font-bold text-red-700 border-r border-red-100 uppercase tracking-wide">Qtd. Consumida</th>
+            <th className="px-4 py-3 font-bold text-red-700 border-r border-red-100 uppercase tracking-wide">Qtd. para Reposição</th>
+            <th className="px-4 py-3 font-bold text-red-700 uppercase tracking-wide">Obs. Sistema</th>
+          </tr>
+        </thead>
+        <tbody>
+          {contaminatedToShow.map((mat, idx) => (
+            <tr key={idx} className={
+              `transition-all duration-150 ${idx % 2 === 0 ? 'bg-white/80' : 'bg-red-50/60'} hover:bg-red-100/60`}
+            >
+              <td className="px-4 py-2 border-r border-red-100 font-semibold text-red-800 align-top">{mat.description}</td>
+              <td className="px-4 py-2 border-r border-red-100 text-red-700 align-top">{mat.code || <span className="italic text-red-400">-</span>}</td>
+              <td className="px-4 py-2 border-r border-red-100 text-red-700 align-top">{mat.lotNumber || <span className="italic text-red-400">-</span>}</td>
+              <td className="px-4 py-2 border-r border-red-100 text-red-600 align-top max-w-[200px] truncate" title={mat.observation || ''}>{mat.observation || <span className="italic text-red-400">-</span>}</td>
+              <td className="px-4 py-2 border-r border-red-100 text-center text-red-700 font-bold align-top">{mat.totalConsumedQuantity}</td>
+              <td className="px-4 py-2 border-r border-red-100 text-center text-red-700 font-bold align-top">{mat.replenishQuantity}</td>
+              <td className="px-4 py-2 text-xs text-red-600 align-top max-w-[180px] truncate" title={mat.replenishmentSuggestionNote || ''}>{mat.replenishmentSuggestionNote || '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
+// Novo componente para tabela de materiais não contaminados
+const MaterialsTablePremium: React.FC<{ materialsToShow: ReplenishmentMaterial[] }> = ({ materialsToShow }) => (
+  <div className="w-full max-w-5xl mx-auto overflow-x-auto mb-8">
+    <h3 className="text-2xl font-extrabold text-indigo-700 px-4 pt-4 pb-2 flex items-center gap-2 tracking-tight">
+      <svg xmlns='http://www.w3.org/2000/svg' className='h-7 w-7 text-indigo-500' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth='2'><path strokeLinecap='round' strokeLinejoin='round' d='M16 7a4 4 0 01-8 0M12 3v4m0 0a4 4 0 01-4 4m4-4a4 4 0 004 4' /></svg>
+      Materiais Utilizados
+    </h3>
+    <div className="rounded-2xl shadow-xl border-2 border-indigo-100 bg-white/90 overflow-hidden animate-fade-in">
+      <table className="min-w-full text-sm text-left">
+        <thead>
+          <tr className="bg-gradient-to-r from-indigo-50 to-white border-b-2 border-indigo-200">
+            <th className="px-4 py-3 font-bold text-indigo-700 border-r border-indigo-100 uppercase tracking-wide">Descrição</th>
+            <th className="px-4 py-3 font-bold text-indigo-700 border-r border-indigo-100 uppercase tracking-wide">Código</th>
+            <th className="px-4 py-3 font-bold text-indigo-700 border-r border-indigo-100 uppercase tracking-wide">Lote</th>
+            <th className="px-4 py-3 font-bold text-indigo-700 border-r border-indigo-100 uppercase tracking-wide text-center">Qtd. Consumida</th>
+            <th className="px-4 py-3 font-bold text-indigo-700 border-r border-indigo-100 uppercase tracking-wide text-center">Qtd. para Reposição</th>
+            <th className="px-4 py-3 font-bold text-indigo-700 border-r border-indigo-100 uppercase tracking-wide">Observação</th>
+            <th className="px-4 py-3 font-bold text-indigo-700 uppercase tracking-wide">Obs. Sistema</th>
+          </tr>
+        </thead>
+        <tbody>
+          {materialsToShow.length === 0 && (
+            <tr><td colSpan={7} className="text-center text-slate-400 py-6">Nenhum material processado para este lote.</td></tr>
+          )}
+          {materialsToShow.map((mat, idx) => (
+            <tr key={idx} className={
+              `transition-all duration-150 ${idx % 2 === 0 ? 'bg-white/80' : 'bg-indigo-50/60'} hover:bg-indigo-100/60`}
+            >
+              <td className="px-4 py-2 border-r border-indigo-100 font-semibold text-indigo-800 align-top">{mat.description}</td>
+              <td className="px-4 py-2 border-r border-indigo-100 text-indigo-700 align-top">{mat.code || <span className="italic text-indigo-400">-</span>}</td>
+              <td className="px-4 py-2 border-r border-indigo-100 text-indigo-700 align-top">{mat.lotNumber || <span className="italic text-indigo-400">-</span>}</td>
+              <td className="px-4 py-2 border-r border-indigo-100 text-center text-indigo-700 font-bold align-top">{mat.totalConsumedQuantity}</td>
+              <td className="px-4 py-2 border-r border-indigo-100 text-center text-indigo-700 font-bold align-top">{mat.replenishQuantity}</td>
+              <td className="px-4 py-2 border-r border-indigo-100 text-indigo-600 align-top max-w-[200px] truncate" title={mat.observation || ''}>{mat.observation || <span className="italic text-indigo-400">-</span>}</td>
+              <td className="px-4 py-2 text-xs text-indigo-600 align-top max-w-[180px] truncate" title={mat.replenishmentSuggestionNote || ''}>{mat.replenishmentSuggestionNote || '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
 export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
   documents,
   onEditDocument,
@@ -169,71 +252,10 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
       </div>
       {/* Tabela de Materiais Contaminados */}
       {contaminatedToShow.length > 0 && (
-        <div className="w-full max-w-5xl mx-auto overflow-x-auto mb-8">
-          <h3 className="text-lg font-bold text-red-700 px-4 pt-4 pb-2 flex items-center gap-2">
-            <svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6 text-red-500' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth='2'><path strokeLinecap='round' strokeLinejoin='round' d='M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' /></svg>
-            Materiais Contaminados
-          </h3>
-          <table className="min-w-full text-sm text-left">
-            <thead>
-              <tr className="bg-transparent border-b border-indigo-100">
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Descrição do Material</th>
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Código</th>
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Lote</th>
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Observação</th>
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Qtd. Consumida</th>
-                <th className="px-4 py-3 font-bold text-red-700 border-r border-indigo-100">Qtd. para Reposição</th>
-                <th className="px-4 py-3 font-bold text-red-700">Obs. Sistema</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contaminatedToShow.map((mat, idx) => (
-                <tr key={idx} className="bg-transparent">
-                  <td className="px-4 py-2 border-r border-indigo-100 font-medium text-red-800 align-top">{mat.description}</td>
-                  <td className="px-4 py-2 border-r border-indigo-100 text-red-700 align-top">{mat.code || <span className="italic text-red-400">-</span>}</td>
-                  <td className="px-4 py-2 border-r border-indigo-100 text-red-700 align-top">{mat.lotNumber || <span className="italic text-red-400">-</span>}</td>
-                  <td className="px-4 py-2 border-r border-indigo-100 text-red-600 align-top max-w-[200px] truncate" title={mat.observation || ''}>{mat.observation || <span className="italic text-red-400">-</span>}</td>
-                  <td className="px-4 py-2 border-r border-indigo-100 text-center text-red-700 font-semibold align-top">{mat.totalConsumedQuantity}</td>
-                  <td className="px-4 py-2 border-r border-indigo-100 text-center text-red-700 font-semibold align-top">{mat.replenishQuantity}</td>
-                  <td className="px-4 py-2 text-xs text-red-600 align-top max-w-[180px] truncate" title={mat.replenishmentSuggestionNote || ''}>{mat.replenishmentSuggestionNote || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ContaminatedMaterialsTable contaminatedToShow={contaminatedToShow} />
       )}
-      {/* Tabela simulando PDF */}
-      <div className="w-full max-w-5xl mx-auto overflow-x-auto mb-8">
-        <table className="min-w-full text-sm text-left">
-          <thead>
-            <tr className="bg-transparent border-b border-indigo-100">
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Descrição do Material</th>
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Código</th>
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Lote</th>
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Observação</th>
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Qtd. Consumida</th>
-              <th className="px-4 py-3 font-bold text-slate-700 border-r border-indigo-100">Qtd. para Reposição</th>
-              <th className="px-4 py-3 font-bold text-slate-700">Obs. Sistema</th>
-            </tr>
-          </thead>
-          <tbody>
-            {materialsToShow.length === 0 && (
-              <tr><td colSpan={7} className="text-center text-slate-400 py-6">Nenhum material processado para este lote.</td></tr>
-            )}
-            {materialsToShow.map((mat, idx) => (
-              <tr key={idx} className="bg-transparent">
-                <td className="px-4 py-2 border-r border-indigo-100 font-medium text-slate-700 align-top">{mat.description}</td>
-                <td className="px-4 py-2 border-r border-indigo-100 text-slate-600 align-top">{mat.code || <span className="italic text-slate-400">-</span>}</td>
-                <td className="px-4 py-2 border-r border-indigo-100 text-slate-600 align-top">{mat.lotNumber || <span className="italic text-slate-400">-</span>}</td>
-                <td className="px-4 py-2 border-r border-indigo-100 text-slate-500 align-top max-w-[200px] truncate" title={mat.observation || ''}>{mat.observation || <span className="italic text-slate-400">-</span>}</td>
-                <td className="px-4 py-2 border-r border-indigo-100 text-center text-indigo-700 font-semibold align-top">{mat.totalConsumedQuantity}</td>
-                <td className="px-4 py-2 border-r border-indigo-100 text-center text-indigo-700 font-semibold align-top">{mat.replenishQuantity}</td>
-                <td className="px-4 py-2 text-xs text-slate-500 align-top max-w-[180px] truncate" title={mat.replenishmentSuggestionNote || ''}>{mat.replenishmentSuggestionNote || '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Tabela de Materiais Utilizados */}
+      <MaterialsTablePremium materialsToShow={materialsToShow} />
       {/* Botões de ação centralizados */}
       <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-4 justify-center items-center mt-2 mb-8">
         <button
