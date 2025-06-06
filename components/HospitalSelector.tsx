@@ -33,21 +33,29 @@ export const HospitalSelector: React.FC<HospitalSelectorProps> = ({
           <button
             key={h.id}
             onClick={() => setSelectedHospital(h.id)}
-            className={`group flex flex-col items-center justify-center p-6 rounded-2xl shadow-xl border-2 transition-all duration-200 bg-white hover:bg-indigo-50 border-gray-200 hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 ${selectedHospital === h.id ? 'ring-4 ring-indigo-300 border-indigo-500' : ''}`}
+            className={`group flex flex-col items-center justify-center p-7 rounded-3xl shadow-2xl border-2 transition-all duration-300 bg-gradient-to-br from-white via-indigo-50 to-white hover:from-indigo-50 hover:to-purple-100 border-indigo-100 hover:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-300 ${selectedHospital === h.id ? 'ring-4 ring-purple-300 border-indigo-500 scale-[1.03]' : ''}`}
+            style={{boxShadow: '0 6px 32px 0 rgba(80,60,180,0.10), 0 1.5px 6px 0 rgba(80,60,180,0.08)'}}
             title={selectedHospital === h.id ? 'Hospital selecionado' : 'Selecionar hospital'}
           >
-            {/* Ícone de hospital colorido */}
+            {/* Ícone temático premium para hospital */}
             <span className="mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-indigo-500 group-hover:text-purple-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="7" width="18" height="13" rx="3" fill="#ede9fe" />
-                <path d="M8 21V17a1 1 0 011-1h6a1 1 0 011 1v4" stroke="#6366f1" strokeWidth="2" />
-                <path d="M12 10v4" stroke="#a21caf" strokeWidth="2" />
-                <path d="M10 12h4" stroke="#a21caf" strokeWidth="2" />
-                <rect x="7" y="10" width="2" height="2" rx="1" fill="#a5b4fc" />
-                <rect x="15" y="10" width="2" height="2" rx="1" fill="#a5b4fc" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14" viewBox="0 0 48 48" fill="none">
+                <defs>
+                  <linearGradient id="hospital-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#a5b4fc" />
+                    <stop offset="1" stopColor="#6366f1" />
+                  </linearGradient>
+                </defs>
+                <rect x="6" y="12" width="36" height="28" rx="6" fill="url(#hospital-grad)" />
+                <rect x="14" y="24" width="6" height="8" rx="2" fill="#fff" />
+                <rect x="28" y="24" width="6" height="8" rx="2" fill="#fff" />
+                <rect x="22" y="18" width="4" height="8" rx="2" fill="#fff" />
+                <rect x="20" y="32" width="8" height="4" rx="2" fill="#ede9fe" />
+                <path d="M24 22v4" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
+                <path d="M22 24h4" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </span>
-            <span className="text-lg font-bold text-indigo-800 mb-1">{h.name}</span>
+            <span className="text-lg font-bold text-indigo-800 mb-1 tracking-wide group-hover:text-purple-700 transition-colors duration-200">{h.name}</span>
             <span className="text-xs text-slate-400">ID: {h.id}</span>
           </button>
         ))}
@@ -58,11 +66,11 @@ export const HospitalSelector: React.FC<HospitalSelectorProps> = ({
           placeholder="Adicionar novo hospital..."
           value={newHospitalName}
           onChange={e => setNewHospitalName(e.target.value)}
-          className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-400 text-base"
+          className="flex-1 px-4 py-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-400 text-base shadow transition-all duration-200 bg-white hover:border-indigo-400"
         />
         <button
           onClick={() => { if (newHospitalName.trim()) { onAddNewHospital?.(newHospitalName); setNewHospitalName(''); }}}
-          className="px-7 py-2 text-base font-semibold rounded-lg shadow-lg bg-gradient-to-br from-purple-100 to-indigo-200 hover:from-purple-200 hover:to-indigo-300 border border-purple-200 hover:border-purple-400 text-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all duration-300 ease-in-out disabled:opacity-70 disabled:cursor-not-allowed"
+          className="px-7 py-3 text-base font-semibold rounded-xl shadow-lg bg-gradient-to-br from-purple-100 to-indigo-200 hover:from-purple-200 hover:to-indigo-300 border border-purple-200 hover:border-purple-400 text-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all duration-300 ease-in-out disabled:opacity-70 disabled:cursor-not-allowed"
           title="Adicionar novo hospital"
         >Adicionar</button>
       </div>

@@ -433,7 +433,6 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
           {/* Para cada paciente/documento selecionado, renderize um card editável completo */}
           {filteredPatientGroups.map(patientKey => (
             <section key={patientKey} className="mb-8">
-              <h3 className="text-xl sm:text-2xl font-extrabold text-indigo-700 mb-4 tracking-tight border-b-2 border-indigo-100 pb-2 uppercase">{patientKey}</h3>
               {groupedEditableDocs[patientKey]?.map(doc => (
                 <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0 bg-white/90 rounded-xl shadow-xl p-6">
                   <div className="flex items-center gap-4 mb-2">
@@ -449,6 +448,14 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                           </button>
                         )}
                       </div>
+                      <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Nome do Paciente</label>
+                      <input
+                        type="text"
+                        value={doc.extractedData?.patientName || ''}
+                        onChange={e => handlePatientNameChange(doc.id, e.target.value)}
+                        className="w-full max-w-[480px] px-5 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg font-semibold text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
+                        placeholder="Nome do paciente"
+                      />
                       <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Data de Nascimento</label>
                       <input
                         type="text"
