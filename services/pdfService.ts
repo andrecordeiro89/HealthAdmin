@@ -426,7 +426,8 @@ export const generateConsolidatedOrderPdf = async (orderData: ConsolidatedOrderD
 
 export const generateGlobalMaterialConsumptionPdf = async (
     consumptionData: GlobalMaterialConsumptionRow[],
-    generationTimestamp: string
+    generationTimestamp: string,
+    periodText?: string
 ): Promise<void> => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageHeight = doc.internal.pageSize.height;
@@ -451,9 +452,9 @@ export const generateGlobalMaterialConsumptionPdf = async (
         doc.setTextColor(51, 65, 85);
 
         // Line 1 for global report: Period / Generation Date
-        const periodText = UI_TEXT.globalConsumptionReportPeriodAll; // Using "Histórico Completo"
+        const period = periodText || UI_TEXT.globalConsumptionReportPeriodAll; // Usa o texto customizado se fornecido
         const generationDateText = `Data de Geração: ${formatDate(generationTimestamp.split('T')[0])}`;
-        doc.text(periodText, margin, y);
+        doc.text(period, margin, y);
         const generationDateTextWidth = doc.getStringUnitWidth(generationDateText) * doc.getFontSize() / doc.internal.scaleFactor;
         doc.text(generationDateText, pageWidth - margin - generationDateTextWidth, y);
         y += detailLineHeight;

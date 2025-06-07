@@ -14,8 +14,10 @@
     "html2pdf.js": "^0.10.3",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
+    "lz-string": "^1.5.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-icons": "^5.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.29",

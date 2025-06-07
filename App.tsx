@@ -15,10 +15,15 @@ import { OrderHistoryScreen } from './components/OrderHistoryScreen';
 import { MaterialDatabaseManagerScreen } from './components/MaterialDatabaseManagerScreen'; 
 import { extractOrderDetailsFromText } from './services/geminiService';
 import { generateConsolidatedOrderPdf, generateGlobalMaterialConsumptionPdf } from './services/pdfService';
+import LZString from 'lz-string';
 
 const LOCAL_STORAGE_ORDER_HISTORY_KEY = 'healthAdminAppOrderHistory';
 const LOCAL_STORAGE_HOSPITAL_OPTIONS_KEY = 'healthAdminAppHospitalOptions';
 const LOCAL_STORAGE_MATERIAL_DB_KEY = 'healthAdminAppMaterialDb';
+const LOCAL_STORAGE_EXPIRY_KEY = 'healthAdminAppExpiry';
+const LOCAL_STORAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const LOCAL_STORAGE_WARNING_THRESHOLD = 0.8; // 80%
+const ORDER_HISTORY_LIMIT = 100;
 
 // Palavras-chave para observações críticas
 const OBSERVATION_KEYWORDS = [
@@ -34,6 +39,52 @@ async function processInBatches<T, R>(items: T[], batchSize: number, processFn: 
     results = results.concat(batchResults);
   }
   return results;
+}
+
+// Função para calcular espaço ocupado no localStorage (em bytes)
+function getLocalStorageSize() {
+  let total = 0;
+  for (let key in localStorage) {
+    if (localStorage.hasOwnProperty(key)) {
+      total += ((localStorage[key].length + key.length) * 2); // 2 bytes por char
+    }
+  }
+  return total;
+}
+
+// Função para salvar dados compactados e com expiração
+function saveWithExpiryAndCompression(key: string, value: any, expiryDays: number = 10) {
+  const expiryDate = new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000);
+  const data = {
+    value,
+    expiry: expiryDate.toISOString(),
+  };
+  const compressed = LZString.compressToUTF16(JSON.stringify(data));
+  localStorage.setItem(key, compressed);
+  if (key === LOCAL_STORAGE_ORDER_HISTORY_KEY) {
+    localStorage.setItem(LOCAL_STORAGE_EXPIRY_KEY, expiryDate.toISOString());
+  }
+}
+
+// Função para ler dados compactados e com expiração
+function loadWithExpiryAndDecompression(key: string) {
+  const compressed = localStorage.getItem(key);
+  if (!compressed) return null;
+  try {
+    const json = LZString.decompressFromUTF16(compressed);
+    if (!json) return null;
+    const data = JSON.parse(json);
+    if (data.expiry && new Date(data.expiry) < new Date()) {
+      localStorage.removeItem(key);
+      if (key === LOCAL_STORAGE_ORDER_HISTORY_KEY) {
+        localStorage.removeItem(LOCAL_STORAGE_EXPIRY_KEY);
+      }
+      return null;
+    }
+    return data.value;
+  } catch {
+    return null;
+  }
 }
 
 const App: React.FC = () => {
@@ -62,82 +113,53 @@ const App: React.FC = () => {
 
   // Load from localStorage on mount
   useEffect(() => {
-    try {
-      const storedHistory = localStorage.getItem(LOCAL_STORAGE_ORDER_HISTORY_KEY);
-      if (storedHistory) {
-        setOrderHistory(JSON.parse(storedHistory));
-      }
-    } catch (error) {
-      console.error("Error loading order history from localStorage:", error);
-      addToast("Erro ao carregar histórico de pedidos do armazenamento local.", AlertType.Error);
+    // Limpeza automática se expirado
+    const expiry = localStorage.getItem(LOCAL_STORAGE_EXPIRY_KEY);
+    if (expiry && new Date(expiry) < new Date()) {
+      localStorage.removeItem(LOCAL_STORAGE_ORDER_HISTORY_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_EXPIRY_KEY);
+      setOrderHistory([]);
+      addToast('O histórico expirou e foi removido automaticamente após 10 dias.', AlertType.Warning);
+    } else {
+      const storedHistory = loadWithExpiryAndDecompression(LOCAL_STORAGE_ORDER_HISTORY_KEY);
+      if (storedHistory) setOrderHistory(storedHistory);
     }
-
-    try {
-      const storedOptions = localStorage.getItem(LOCAL_STORAGE_HOSPITAL_OPTIONS_KEY);
-      if (storedOptions) {
-        const parsedOptions = JSON.parse(storedOptions);
-        if (Array.isArray(parsedOptions) && parsedOptions.length > 0) {
-            setHospitalOptions(parsedOptions);
-        } else {
-            setHospitalOptions(INITIAL_HOSPITAL_OPTIONS); 
-        }
-      } else {
-        setHospitalOptions(INITIAL_HOSPITAL_OPTIONS); 
-      }
-    } catch (error) {
-      console.error("Error loading hospital options from localStorage:", error);
-      setHospitalOptions(INITIAL_HOSPITAL_OPTIONS); 
-      addToast("Erro ao carregar lista de hospitais do armazenamento local.", AlertType.Error);
-    }
-
-    try {
-      const storedMaterialDb = localStorage.getItem(LOCAL_STORAGE_MATERIAL_DB_KEY);
-      if (storedMaterialDb) {
-        const parsedDb = JSON.parse(storedMaterialDb);
-        if (Array.isArray(parsedDb) && parsedDb.length > 0) {
-            setMaterialDatabase(parsedDb);
-        } else {
-             setMaterialDatabase(INITIAL_SIMULATED_MATERIAL_DATABASE);
-        }
-      } else {
-        setMaterialDatabase(INITIAL_SIMULATED_MATERIAL_DATABASE);
-      }
-    } catch (error) {
-        console.error("Error loading material database from localStorage:", error);
-        setMaterialDatabase(INITIAL_SIMULATED_MATERIAL_DATABASE);
-        addToast("Erro ao carregar base de dados de materiais do armazenamento local.", AlertType.Error);
-    }
+    const storedOptions = loadWithExpiryAndDecompression(LOCAL_STORAGE_HOSPITAL_OPTIONS_KEY);
+    if (storedOptions) setHospitalOptions(storedOptions);
+    const storedMaterialDb = loadWithExpiryAndDecompression(LOCAL_STORAGE_MATERIAL_DB_KEY);
+    if (storedMaterialDb) setMaterialDatabase(storedMaterialDb);
   }, []);
 
   // Save orderHistory to localStorage on change
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_ORDER_HISTORY_KEY, JSON.stringify(orderHistory));
-    } catch (error) {
-      console.error("Error saving order history to localStorage:", error);
-      addToast("Erro ao salvar histórico de pedidos no armazenamento local.", AlertType.Error);
+    // Limitar histórico a 100 registros e evitar duplicatas
+    let uniqueHistory = Array.isArray(orderHistory) ? [...orderHistory] : [];
+    uniqueHistory = uniqueHistory.filter((item, idx, arr) =>
+      arr.findIndex(x => x.orderId === item.orderId) === idx
+    );
+    if (uniqueHistory.length > ORDER_HISTORY_LIMIT) {
+      uniqueHistory = uniqueHistory.slice(0, ORDER_HISTORY_LIMIT);
     }
+    saveWithExpiryAndCompression(LOCAL_STORAGE_ORDER_HISTORY_KEY, uniqueHistory, 10);
   }, [orderHistory]);
 
   // Save hospitalOptions to localStorage on change
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_HOSPITAL_OPTIONS_KEY, JSON.stringify(hospitalOptions));
-    } catch (error) {
-      console.error("Error saving hospital options to localStorage:", error);
-      addToast("Erro ao salvar lista de hospitais no armazenamento local.", AlertType.Error);
-    }
+    saveWithExpiryAndCompression(LOCAL_STORAGE_HOSPITAL_OPTIONS_KEY, hospitalOptions, 10);
   }, [hospitalOptions]);
 
   // Save materialDatabase to localStorage on change
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_MATERIAL_DB_KEY, JSON.stringify(materialDatabase));
-    } catch (error) {
-      console.error("Error saving material database to localStorage:", error);
-      addToast("Erro ao salvar base de dados de materiais no armazenamento local.", AlertType.Error);
-    }
+    saveWithExpiryAndCompression(LOCAL_STORAGE_MATERIAL_DB_KEY, materialDatabase, 10);
   }, [materialDatabase]);
+
+  // Monitorar espaço ocupado e exibir aviso premium se acima de 80%
+  useEffect(() => {
+    const used = getLocalStorageSize();
+    if (used > LOCAL_STORAGE_MAX_SIZE * LOCAL_STORAGE_WARNING_THRESHOLD) {
+      addToast('Atenção: O espaço de armazenamento local está quase cheio. Considere exportar ou limpar dados antigos.', AlertType.Warning);
+    }
+  }, [orderHistory, hospitalOptions, materialDatabase]);
 
   const handleHospitalSelect = (hospitalId: string) => { 
     const hospitalDetails = hospitalOptions.find(h => h.id === hospitalId);
