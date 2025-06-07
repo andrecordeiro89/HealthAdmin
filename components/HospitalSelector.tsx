@@ -6,6 +6,8 @@ import { buttonPrimary, buttonSecondary, buttonLight, buttonSize, cardLarge } fr
 
 interface HospitalSelectorProps {
   hospitals: HospitalOption[];
+  selectedHospital: string | null;
+  setSelectedHospital: React.Dispatch<React.SetStateAction<string | null>>;
   onSelect: (hospitalId: string) => void; // hospitalId is now string
   onViewHistory?: () => void;
   onManageMaterialDatabase?: () => void;
@@ -13,6 +15,8 @@ interface HospitalSelectorProps {
   onGenerateGlobalConsumptionReport?: () => void; // New prop for global consumption report
   showTooltips: boolean;
   setShowTooltips: React.Dispatch<React.SetStateAction<boolean>>;
+  onRemoveHospital: (hospitalId: string) => void;
+  onEditHospitalName: (hospitalId: string, newName: string) => void;
 }
 
 // Novo componente para o botão de engrenagem
@@ -32,9 +36,17 @@ const SettingsButton = ({ onClick }: { onClick: () => void }) => (
 );
 
 // Novo componente para o modal de configurações (unificado, premium, corporativo)
-const SettingsModal = ({ isOpen, onClose, showTooltips, setShowTooltips, newHospitalName, setNewHospitalName, onAddNewHospital, hospitals, onRemoveHospital }: any) => {
+const SettingsModal = ({ isOpen, onClose, showTooltips, setShowTooltips, newHospitalName, setNewHospitalName, onAddNewHospital, hospitals, onRemoveHospital, onEditHospitalName }: any) => {
   const [editingHospitalId, setEditingHospitalId] = React.useState<string | null>(null);
   const [editingHospitalName, setEditingHospitalName] = React.useState<string>('');
+  const [hospitalToDelete, setHospitalToDelete] = React.useState<any | null>(null);
+
+  const handleConfirmDelete = () => {
+    if (hospitalToDelete) {
+      onRemoveHospital && onRemoveHospital(hospitalToDelete.id);
+      setHospitalToDelete(null);
+    }
+  };
 
   if (!isOpen) return null;
   return (
@@ -89,9 +101,7 @@ const SettingsModal = ({ isOpen, onClose, showTooltips, setShowTooltips, newHosp
                       <button
                         onClick={() => {
                           if (editingHospitalName.trim() && editingHospitalName !== h.name) {
-                            if (typeof window !== 'undefined' && typeof (window as any).editHospitalName === 'function') {
-                              (window as any).editHospitalName(h.id, editingHospitalName.trim());
-                            }
+                            onEditHospitalName && onEditHospitalName(h.id, editingHospitalName.trim());
                           }
                           setEditingHospitalId(null);
                         }}
@@ -111,6 +121,7 @@ const SettingsModal = ({ isOpen, onClose, showTooltips, setShowTooltips, newHosp
                   ) : (
                     <>
                       <span className="flex-1 text-slate-700 text-sm font-medium truncate">{h.name}</span>
+                      <span className="text-xs text-slate-400">ID: {h.id}</span>
                       <button
                         onClick={() => { setEditingHospitalId(h.id); setEditingHospitalName(h.name); }}
                         className="ml-2 p-1 rounded hover:bg-indigo-100 text-indigo-500 hover:text-indigo-700 transition flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-300"
@@ -122,7 +133,7 @@ const SettingsModal = ({ isOpen, onClose, showTooltips, setShowTooltips, newHosp
                         </svg>
                       </button>
                       <button
-                        onClick={() => onRemoveHospital && onRemoveHospital(h.id)}
+                        onClick={() => setHospitalToDelete(h)}
                         className="ml-2 p-1 rounded hover:bg-red-100 text-red-500 hover:text-red-700 transition flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-300"
                         title={`Excluir ${h.name}`}
                       >
@@ -140,35 +151,42 @@ const SettingsModal = ({ isOpen, onClose, showTooltips, setShowTooltips, newHosp
           </div>
         </div>
       </div>
+      {/* Modal de confirmação de exclusão */}
+      <Modal isOpen={!!hospitalToDelete} onClose={() => setHospitalToDelete(null)} title="Confirmar Exclusão" size="sm">
+        <div className="flex flex-col items-center gap-4 py-2">
+          <span className="text-lg text-slate-700 text-center">Tem certeza que deseja excluir o hospital <b>{hospitalToDelete?.name}</b>?</span>
+          <div className="flex flex-row gap-4 mt-4 justify-center">
+            <button onClick={() => setHospitalToDelete(null)} className={buttonLight + ' ' + buttonSize}>Cancelar</button>
+            <button onClick={handleConfirmDelete} className={buttonPrimary + ' ' + buttonSize + ' bg-gradient-to-br from-red-500 to-red-700 text-white'}>Excluir</button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
 
 export const HospitalSelector: React.FC<HospitalSelectorProps> = ({ 
   hospitals, 
+  selectedHospital,
+  setSelectedHospital,
   onSelect, 
   onViewHistory, 
   onManageMaterialDatabase,
   onAddNewHospital,
   onGenerateGlobalConsumptionReport,
   showTooltips,
-  setShowTooltips
+  setShowTooltips,
+  onRemoveHospital,
+  onEditHospitalName
 }) => {
-  const [selectedHospital, setSelectedHospital] = useState<string>('');
   const [newHospitalName, setNewHospitalName] = useState<string>('');
   const [showSettings, setShowSettings] = useState(false);
+  const cardsContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Função para remover hospital
   const handleRemoveHospital = (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este hospital?')) {
-      // Chama a função recebida por props, se existir
-      if (typeof onAddNewHospital === 'function' && hospitals) {
-        // Remove hospital da lista (deve ser implementado no componente pai)
-        // Aqui apenas dispara um callback
-        if (typeof (window as any).removeHospital === 'function') {
-          (window as any).removeHospital(id);
-        }
-      }
+    if (typeof onRemoveHospital === 'function') {
+      onRemoveHospital(id);
     }
   };
 
@@ -184,10 +202,11 @@ export const HospitalSelector: React.FC<HospitalSelectorProps> = ({
         onAddNewHospital={onAddNewHospital}
         hospitals={hospitals}
         onRemoveHospital={handleRemoveHospital}
+        onEditHospitalName={onEditHospitalName}
       />
       <h2 className="text-3xl sm:text-4xl font-extrabold text-indigo-700 tracking-tight mb-2 text-center">Selecione o Hospital</h2>
       <p className="text-base text-slate-500 mb-8 text-center">Escolha o hospital para iniciar o gerenciamento de documentos.</p>
-      <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-10 px-2">
+      <div ref={cardsContainerRef} className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-10 px-2">
         {hospitals.map(h => (
           <button
             key={h.id}

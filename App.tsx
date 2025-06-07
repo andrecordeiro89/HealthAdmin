@@ -182,10 +182,8 @@ const App: React.FC = () => {
       addToast(UI_TEXT.errorHospitalNameExists, AlertType.Error);
       return false;
     }
-
     const newHospitalId = `hosp-${trimmedName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
     const newHospital: HospitalOption = { id: newHospitalId, name: trimmedName };
-    
     setHospitalOptions(prev => [...prev, newHospital].sort((a,b) => a.name.localeCompare(b.name)));
     addToast(UI_TEXT.hospitalAddedSuccessMessage(trimmedName), AlertType.Success);
     return true;
@@ -787,11 +785,31 @@ const App: React.FC = () => {
     }
   }, [documents]);
 
+  const handleRemoveHospital = (hospitalId: string) => {
+    setHospitalOptions(prev => prev.filter(h => h.id !== hospitalId));
+    if (selectedHospital === hospitalId) {
+      setSelectedHospital(null);
+      setSelectedHospitalName('');
+      setAppState(AppState.SELECTING_HOSPITAL);
+    }
+    addToast('Hospital removido com sucesso.', AlertType.Success);
+  };
+
+  const handleEditHospitalName = (hospitalId: string, newName: string) => {
+    setHospitalOptions(prev => prev.map(h => h.id === hospitalId ? { ...h, name: newName } : h));
+    if (selectedHospital === hospitalId) {
+      setSelectedHospitalName(newName);
+    }
+    addToast(`Nome do hospital atualizado para '${newName}'.`, AlertType.Success);
+  };
+
   const renderContent = () => {
     switch (appState) {
       case AppState.SELECTING_HOSPITAL:
         return <HospitalSelector 
                     hospitals={hospitalOptions} 
+                    selectedHospital={selectedHospital}
+                    setSelectedHospital={setSelectedHospital}
                     onSelect={handleHospitalSelect} 
                     onViewHistory={orderHistory.length > 0 ? handleNavigateToHistory : undefined}
                     onManageMaterialDatabase={handleNavigateToManageMaterialDatabase}
@@ -799,6 +817,8 @@ const App: React.FC = () => {
                     onGenerateGlobalConsumptionReport={orderHistory.length > 0 ? handleGenerateGlobalConsumptionReport : undefined}
                     showTooltips={showTooltips}
                     setShowTooltips={setShowTooltips}
+                    onRemoveHospital={handleRemoveHospital}
+                    onEditHospitalName={handleEditHospitalName}
                />;
       case AppState.MANAGING_DOCUMENTS:
         if (!selectedHospital) return <Alert message="Hospital não selecionado." type={AlertType.Error} />;
@@ -860,7 +880,8 @@ const App: React.FC = () => {
         );
       case AppState.REPORT_GENERATED:
         return (
-            <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-2xl text-center">
+            <div className="w-full min-h-screen flex items-start justify-center pt-20">
+              <div className="w-full max-w-md bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-2xl text-center mx-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-purple-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -880,6 +901,7 @@ const App: React.FC = () => {
                         {UI_TEXT.viewOrderHistoryButton}
                     </button>
                 )}
+              </div>
             </div>
         );
       case AppState.VIEW_HISTORY:

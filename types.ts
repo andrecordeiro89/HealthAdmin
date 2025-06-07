@@ -82,7 +82,7 @@ export enum AppState {
 }
 
 export interface HospitalOption {
-  id: string; // Changed from Hospital enum to string for dynamic addition
+  id: string;
   name: string;
 }
 
