@@ -42,7 +42,6 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
         <div className="w-full flex flex-col gap-4 bg-gradient-to-br from-white via-indigo-50 to-white rounded-2xl shadow-2xl p-8 border border-indigo-100">
         <FileUpload onFilesSelect={onAddDocuments} />
           <div className="w-full flex flex-col items-center gap-2">
-            <p className="text-base text-slate-500 text-center mb-2 font-medium">{UI_TEXT.uploadInstructions}</p>
             <label className="block text-lg font-bold text-indigo-700 mb-1 text-center tracking-wide">Palavras de Busca - Críticas</label>
           <input
             type="text"

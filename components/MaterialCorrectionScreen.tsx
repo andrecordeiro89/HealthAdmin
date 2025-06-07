@@ -354,13 +354,13 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
       {showFooterButtons && (
         <div className="fixed bottom-0 left-0 w-full flex justify-end bg-transparent py-4 z-30">
           <div className="flex flex-row gap-4 w-full max-w-4xl px-4 justify-end">
-            <button onClick={onGoBack} className={buttonLight + " sm:w-auto"}>
-              {UI_TEXT.backToDocumentManagementButton}
+            <button onClick={onGoBack} className={buttonLight + ' ' + buttonSize + ' sm:w-auto'}>
+              Voltar
             </button>
-            <button onClick={onSkip} className={buttonSecondary + " sm:w-auto"}>
-              {UI_TEXT.skipCorrectionsButton.replace("Pular Correção e ", "")}
+            <button onClick={onSkip} className={buttonSecondary + ' ' + buttonSize + ' sm:w-auto'}>
+              {UI_TEXT.skipCorrectionsButton.replace('Pular Correção e ', '')}
             </button>
-            <button onClick={handleSubmitCorrections} className={buttonPrimary + " " + buttonSize + " shadow-lg"} title="Salvar correções e continuar para revisão">
+            <button onClick={handleSubmitCorrections} className={buttonPrimary + ' ' + buttonSize + ' shadow-lg'} title="Salvar correções e continuar para revisão">
               Salvar e Avançar
             </button>
           </div>
@@ -453,7 +453,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                         type="text"
                         value={doc.extractedData?.patientName || ''}
                         onChange={e => handlePatientNameChange(doc.id, e.target.value)}
-                        className="w-full max-w-[480px] px-5 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg font-semibold text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
+                        className="w-full max-w-[480px] px-4 py-2 rounded-lg border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-medium text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
                         placeholder="Nome do paciente"
                       />
                       <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Data de Nascimento</label>
@@ -461,7 +461,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                         type="text"
                         value={doc.extractedData?.patientDOB || ''}
                         onChange={e => handlePatientInfoChange(doc.id, 'patientDOB', e.target.value)}
-                        className="w-full max-w-[480px] px-5 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg font-semibold text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
+                        className="w-full max-w-[480px] px-4 py-2 rounded-lg border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-medium text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
                         placeholder="Data de nascimento"
                       />
                       <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Data da Cirurgia</label>
@@ -469,7 +469,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                         type="text"
                         value={doc.extractedData?.surgeryDate || ''}
                         onChange={e => handlePatientInfoChange(doc.id, 'surgeryDate', e.target.value)}
-                        className="w-full max-w-[480px] px-5 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg font-semibold text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
+                        className="w-full max-w-[480px] px-4 py-2 rounded-lg border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-medium text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
                         placeholder="Data da cirurgia"
                       />
                       <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Procedimento</label>
@@ -477,7 +477,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                         type="text"
                         value={doc.extractedData?.procedureName || ''}
                         onChange={e => handlePatientInfoChange(doc.id, 'procedureName', e.target.value)}
-                        className="w-full max-w-[480px] px-5 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg font-semibold text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
+                        className="w-full max-w-[480px] px-4 py-2 rounded-lg border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-medium text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
                         placeholder="Procedimento"
                       />
                       <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Médico Responsável</label>
@@ -485,7 +485,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                         type="text"
                         value={doc.extractedData?.doctorName || ''}
                         onChange={e => handlePatientInfoChange(doc.id, 'doctorName', e.target.value)}
-                        className="w-full max-w-[480px] px-5 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-lg font-semibold text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
+                        className="w-full max-w-[480px] px-4 py-2 rounded-lg border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-medium text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
                         placeholder="Médico responsável"
                       />
                     </div>
