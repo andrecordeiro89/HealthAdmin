@@ -45,6 +45,7 @@ const App: React.FC = () => {
   const [lastGeneratedOrder, setLastGeneratedOrder] = useState<ConsolidatedOrderData | null>(null);
   const [orderHistory, setOrderHistory] = useState<ConsolidatedOrderData[]>([]);
   const [toasts, setToasts] = useState<{ id: number, message: string, type: AlertType }[]>([]);
+  const [showTooltips, setShowTooltips] = useState(true);
 
   const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
@@ -137,7 +138,6 @@ const App: React.FC = () => {
       addToast("Erro ao salvar base de dados de materiais no armazenamento local.", AlertType.Error);
     }
   }, [materialDatabase]);
-
 
   const handleHospitalSelect = (hospitalId: string) => { 
     const hospitalDetails = hospitalOptions.find(h => h.id === hospitalId);
@@ -271,7 +271,7 @@ const App: React.FC = () => {
     const errorCount = processedResults.filter(d => d.status === 'error').length;
 
     if (anySuccess) {
-      addToast(`Processamento concluído. ${successCount} documento(s) com sucesso, ${errorCount} com erro. Revise e corrija os materiais abaixo para aprimorar a IA.`, AlertType.Success);
+      addToast(`Processamento concluído. ${successCount} documento(s) com sucesso, ${errorCount} com erro. Revise e corrija os materiais abaixo para aprimorar a IA.`, AlertType.Success, true);
       setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
     } else if (anyError && !anySuccess) {
       addToast('Todos os documentos pendentes falharam ao processar. Verifique os detalhes.', AlertType.Error);
@@ -775,6 +775,8 @@ const App: React.FC = () => {
                     onManageMaterialDatabase={handleNavigateToManageMaterialDatabase}
                     onAddNewHospital={handleAddNewHospital} 
                     onGenerateGlobalConsumptionReport={orderHistory.length > 0 ? handleGenerateGlobalConsumptionReport : undefined}
+                    showTooltips={showTooltips}
+                    setShowTooltips={setShowTooltips}
                />;
       case AppState.MANAGING_DOCUMENTS:
         if (!selectedHospital) return <Alert message="Hospital não selecionado." type={AlertType.Error} />;
@@ -899,7 +901,9 @@ const App: React.FC = () => {
     };
   }, [appState]);
 
-  const addToast = (message: string, type: AlertType) => {
+  // Se forceShow for true, exibe o toast mesmo se showTooltips estiver desligado
+  const addToast = (message: string, type: AlertType, forceShow = false) => {
+    if (!showTooltips && !forceShow) return;
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
@@ -912,7 +916,7 @@ const App: React.FC = () => {
         .hide-browser-scrollbar::-webkit-scrollbar { display: none !important; }
         .hide-browser-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
       `}</style>
-      <div className={appBackgroundClass} style={{width: '100vw'}}>
+      <div className={appBackgroundClass + " min-h-screen w-full"} style={{width: '100vw'}}>
         {/* Header só aparece se NÃO for uma tela com logotipo centralizado */}
         {appState === AppState.VIEW_HISTORY || appState === AppState.MANAGE_MATERIAL_DATABASE ? <Header title="HealthAdmin" /> : null}
         <main className="flex-grow w-full h-full px-0 py-0 flex flex-col">
@@ -924,14 +928,22 @@ const App: React.FC = () => {
           <div className="flex-1 w-full h-full">
             {/* Se for uma tela com logotipo centralizado, mostra logo centralizado */}
             {appState === AppState.SELECTING_HOSPITAL || appState === AppState.MANAGING_DOCUMENTS || appState === AppState.DATA_CORRECTION_AI_FEEDBACK || appState === AppState.REVIEW_AND_EDIT || appState === AppState.REPORT_GENERATED ? (
-              <div className="w-full min-h-screen flex flex-col items-center pt-8 select-none" style={{minHeight: '80vh'}}>
-                <div className="flex flex-row items-center justify-center mb-10 mt-2">
-                  <span className="text-3xl sm:text-5xl font-extrabold text-indigo-700 tracking-tight" style={{letterSpacing: '0.01em'}}>
+              <div className="w-full min-h-screen flex flex-col items-center pt-2 select-none" style={{minHeight: '80vh'}}>
+                <div className="flex flex-row items-center justify-center mb-2 mt-2">
+                  <span className="text-2xl sm:text-4xl font-extrabold text-indigo-700 tracking-tight" style={{letterSpacing: '0.01em'}}>
                     HealthAdmin
                   </span>
                   <svg width="48" height="24" viewBox="0 0 48 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-2">
                     <polyline points="2,12 11,12 15,21 21,3 27,18 32,12 46,12" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
+                </div>
+                {/* Linha do header com botão de configurações à direita */}
+                <div className="w-full flex justify-center items-center">
+                  <div className="w-full max-w-screen-2xl flex items-center">
+                    <div className="flex-1">
+                      <div className="w-full h-[2.5px] rounded-full shadow-md" style={{background: 'linear-gradient(90deg, #fff 0%, #e0e7ff 40%, #ede9fe 60%, #fff 100%)', boxShadow: '0 2px 8px 0 rgba(80,60,180,0.07)'}} />
+                    </div>
+                  </div>
                 </div>
                 {/* Renderiza o conteúdo normal da tela */}
                 {renderContent()}

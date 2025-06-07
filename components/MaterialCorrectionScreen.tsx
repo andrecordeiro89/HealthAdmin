@@ -439,15 +439,15 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                     <div className="flex flex-col gap-2 mb-8">
                       <div className="flex flex-row items-center gap-4 mb-2">
                         <h2 className="text-2xl font-extrabold text-indigo-700 uppercase truncate">{doc.extractedData?.patientName || 'Paciente'}</h2>
-                        {doc.imagePreviewUrl && (
-                          <button
-                            onClick={() => handleViewDocument(doc.id)}
+                    {doc.imagePreviewUrl && (
+                      <button
+                        onClick={() => handleViewDocument(doc.id)}
                             className="px-6 py-2 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-lg font-bold shadow-lg hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
                           >
                             Visualizar
                           </button>
-                        )}
-                      </div>
+                    )}
+                  </div>
                       <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Nome do Paciente</label>
                       <input
                         type="text"
@@ -496,32 +496,32 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                       <div key={index} className={`mb-6 p-7 rounded-2xl border border-indigo-100 shadow-lg bg-gradient-to-br from-white via-indigo-50 to-white/90 transition-all duration-300 ${material.contaminated ? 'ring-2 ring-red-400 bg-gradient-to-br from-red-50/70 to-white/90' : ''}`}> 
                         {/* Header premium: Checkbox Contaminado no topo à esquerda */}
                         <div className="flex items-center mb-5 gap-3">
-                          <input
-                            type="checkbox"
-                            checked={!!material.contaminated}
-                            onChange={e => {
-                              setEditableDocuments(prevDocs =>
-                                prevDocs.map(docItem => {
-                                  if (docItem.id === doc.id && docItem.extractedData) {
-                                    const newMaterials = [...docItem.extractedData.materialsUsed];
-                                    newMaterials[index] = {
-                                      ...newMaterials[index],
-                                      contaminated: e.target.checked
-                                    };
-                                    return { ...docItem, extractedData: { ...docItem.extractedData, materialsUsed: newMaterials } };
-                                  }
-                                  return docItem;
-                                })
-                              );
-                            }}
+                            <input
+                              type="checkbox"
+                              checked={!!material.contaminated}
+                              onChange={e => {
+                                setEditableDocuments(prevDocs =>
+                                  prevDocs.map(docItem => {
+                                    if (docItem.id === doc.id && docItem.extractedData) {
+                                      const newMaterials = [...docItem.extractedData.materialsUsed];
+                                      newMaterials[index] = {
+                                        ...newMaterials[index],
+                                        contaminated: e.target.checked
+                                      };
+                                      return { ...docItem, extractedData: { ...docItem.extractedData, materialsUsed: newMaterials } };
+                                    }
+                                    return docItem;
+                                  })
+                                );
+                              }}
                             className="accent-red-500 w-5 h-5 mr-2 rounded-lg border-2 border-red-300 shadow focus:ring-2 focus:ring-red-400 transition-all duration-200"
-                            id={`contaminated-${doc.id}-${index}`}
-                          />
+                              id={`contaminated-${doc.id}-${index}`}
+                            />
                           <label htmlFor={`contaminated-${doc.id}-${index}`} className="text-red-600 font-semibold text-base cursor-pointer select-none tracking-wide">Contaminado</label>
                           {material.contaminated && (
                             <span className="inline-block px-3 py-1 bg-gradient-to-r from-red-200 via-red-100 to-white text-red-700 rounded-full text-xs ml-2 font-bold tracking-wide shadow-sm border border-red-200" title="Material contaminado">Contaminado</span>
                           )}
-                        </div>
+                          </div>
                         {/* Linha premium dos campos principais */}
                         <div className="grid grid-cols-12 gap-5 items-end">
                           {/* Descrição + Botão + Autocomplete */}

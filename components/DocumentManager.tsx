@@ -40,22 +40,22 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       <div className="w-full max-w-2xl flex flex-col items-center mx-auto gap-8">
         <h1 className="text-4xl font-extrabold text-indigo-700 tracking-tight text-center mb-2 drop-shadow-sm">{UI_TEXT.documentManagementTitle(hospitalName)}</h1>
         <div className="w-full flex flex-col gap-4 bg-gradient-to-br from-white via-indigo-50 to-white rounded-2xl shadow-2xl p-8 border border-indigo-100">
-          <FileUpload onFilesSelect={onAddDocuments} />
+        <FileUpload onFilesSelect={onAddDocuments} />
           <div className="w-full flex flex-col items-center gap-2">
             <p className="text-base text-slate-500 text-center mb-2 font-medium">{UI_TEXT.uploadInstructions}</p>
             <label className="block text-lg font-bold text-indigo-700 mb-1 text-center tracking-wide">Palavras de Busca - Críticas</label>
-            <input
-              type="text"
+          <input
+            type="text"
               className="w-full max-w-[340px] px-4 py-3 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base text-center shadow transition-all duration-200 bg-white hover:border-indigo-400"
-              placeholder="Instruções ou palavras críticas (ex: extraviado, devolvido)"
-              value={criticalWords}
-              onChange={e => setCriticalWords(e.target.value)}
-            />
-            <p className="text-xs text-slate-500 mt-1 text-center">
-              O sistema já busca automaticamente: <span className="font-mono">contaminado, estragado, defeito, danificado, não implantado</span>, etc.<br />
-              Adicione outras palavras separadas por vírgula para este processamento.
-            </p>
-          </div>
+            placeholder="Instruções ou palavras críticas (ex: extraviado, devolvido)"
+            value={criticalWords}
+            onChange={e => setCriticalWords(e.target.value)}
+          />
+          <p className="text-xs text-slate-500 mt-1 text-center">
+            O sistema já busca automaticamente: <span className="font-mono">contaminado, estragado, defeito, danificado, não implantado</span>, etc.<br />
+            Adicione outras palavras separadas por vírgula para este processamento.
+          </p>
+        </div>
         </div>
         <div className="flex flex-row gap-6 justify-center items-center w-full mt-2 mb-2">
           <button

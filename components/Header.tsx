@@ -14,22 +14,6 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
     <header className="sticky top-0 z-40 bg-transparent w-full">
       <div className="container mx-auto px-4 py-5 flex items-center justify-end">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-indigo-700 tracking-tight flex items-center gap-3">
-          <span className="text-indigo-600 font-extrabold tracking-tight flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 64 32"
-              className="w-8 h-8 text-indigo-600"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M2 16H14L20 8L28 24L36 12L42 16H52" />
-              <circle cx="57" cy="16" r="3" fill="currentColor" stroke="none" />
-            </svg>
-            {companyName}
-          </span>
           {systemName && <span className="font-semibold text-slate-600 text-2xl">- {systemName}</span>}
         </h1>
       </div>
