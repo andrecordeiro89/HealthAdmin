@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Remover ou sobrescrever background do body/html */
 body, html {
   background: none !important;
