@@ -227,8 +227,15 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
       {/* Cabeçalho premium */}
       <div className="w-full max-w-6xl flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <div>
-          <h1 className="title-premium">Materiais Utilizados</h1>
-          <p className="text-slate-500 text-base mt-1">Visualize e exporte o consumo de materiais do lote processado.</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-indigo-700 tracking-tight drop-shadow-sm mb-1 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 01-8 0M12 3v4m0 0a4 4 0 01-4 4m4-4a4 4 0 004 4" /></svg>
+            Materiais Utilizados
+          </h1>
+          <p className="text-lg text-indigo-500 font-medium mb-2 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 0A9 9 0 11 3 12a9 9 0 0118 0z" /></svg>
+            Visualize e exporte o consumo de materiais do lote processado.
+          </p>
+          <div className="h-1 w-16 bg-gradient-to-r from-indigo-400 to-purple-300 rounded-full mb-2" />
         </div>
       </div>
 
@@ -241,7 +248,7 @@ export const ExtractionReviewScreen: React.FC<ExtractionReviewScreenProps> = ({
           // onChange={...} // implementar busca se desejar
         />
         {/* Filtros avançados podem ser adicionados aqui */}
-      </div>
+        </div>
 
       {/* Abas para alternar entre todos e contaminados */}
       <div className="w-full max-w-6xl flex gap-2 mb-2">

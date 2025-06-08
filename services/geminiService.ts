@@ -234,6 +234,37 @@ export async function extractOrderDetailsFromText(
     }
     // --- FIM DA LÓGICA DE PRIORIZAÇÃO DE DATA DE CIRURGIA ---
 
+    // --- INÍCIO DA LÓGICA DE NORMALIZAÇÃO DE DATA DE CIRURGIA DD/MM/AA PARA DD/MM/20AA ---
+    if (parsedData && parsedData.surgeryDate) {
+      // Normaliza datas no formato DD/MM/AA para DD/MM/20AA (apenas para anos 20-99)
+      parsedData.surgeryDate = parsedData.surgeryDate.replace(
+        /\b(\d{2})\/(\d{2})\/(\d{2})\b/g,
+        (match, d, m, a) => {
+          // Considera apenas anos >= 20 como 20AA
+          const yearNum = parseInt(a, 10);
+          if (yearNum >= 20 && yearNum <= 99) {
+            return `${d}/${m}/20${a}`;
+          }
+          // Se não for, mantém o original
+          return match;
+        }
+      );
+    }
+    // --- FIM DA LÓGICA DE NORMALIZAÇÃO DE DATA DE CIRURGIA ---
+
+    // --- INÍCIO DA LÓGICA DE BUSCA DE DATA DE CIRURGIA NO TEXTO BRUTO ---
+    if ((!parsedData.surgeryDate || parsedData.surgeryDate === null || parsedData.surgeryDate === "") && rawResponseText) {
+      const match = rawResponseText.match(/\b(\d{2})\/(\d{2})\/(\d{2})\b/);
+      if (match) {
+        const [_, d, m, a] = match;
+        const yearNum = parseInt(a, 10);
+        if (yearNum >= 20 && yearNum <= 99) {
+          parsedData.surgeryDate = `${d}/${m}/20${a}`;
+        }
+      }
+    }
+    // --- FIM DA LÓGICA DE BUSCA DE DATA DE CIRURGIA NO TEXTO BRUTO ---
+
     return parsedData;
 
   } catch (error) {

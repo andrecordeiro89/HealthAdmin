@@ -5,6 +5,7 @@ import { Alert, AlertType } from './Alert';
 import { Modal } from './Modal';
 import { tableHeader, tableCell, zebraRow, buttonPrimary, buttonLight, buttonSecondary, inputBase, buttonSize, cardLarge, cardBase, sectionGap } from './uiClasses';
 import CheckCircleIcon from '@heroicons/react/24/solid/CheckCircleIcon';
+import CreatableSelect from 'react-select/creatable';
 
 interface MaterialCorrectionScreenProps {
   hospitalName: string;
@@ -435,19 +436,10 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
             <section key={patientKey} className="mb-8">
               {groupedEditableDocs[patientKey]?.map(doc => (
                 <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0 bg-white/90 rounded-xl shadow-xl p-6">
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="flex flex-col gap-2 mb-8">
-                      <div className="flex flex-row items-center gap-4 mb-2">
-                        <h2 className="text-2xl font-extrabold text-indigo-700 uppercase truncate">{doc.extractedData?.patientName || 'Paciente'}</h2>
-                    {doc.imagePreviewUrl && (
-                      <button
-                        onClick={() => handleViewDocument(doc.id)}
-                            className="px-6 py-2 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-lg font-bold shadow-lg hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
-                          >
-                            Visualizar
-                          </button>
-                    )}
-                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[400px_1fr] gap-4 items-start">
+                    {/* Coluna esquerda: Campos do paciente */}
+                    <div className="flex flex-col gap-3 mb-4 w-full max-w-[400px]">
+                      <h2 className="text-2xl font-extrabold text-indigo-700 uppercase truncate mb-2">{doc.extractedData?.patientName || 'Paciente'}</h2>
                       <label className="block text-sm font-semibold text-slate-600 mt-4 mb-1">Nome do Paciente</label>
                       <input
                         type="text"
@@ -488,10 +480,24 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                         className="w-full max-w-[480px] px-4 py-2 rounded-lg border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-medium text-slate-800 bg-white shadow transition-all duration-200 hover:border-indigo-400"
                         placeholder="Médico responsável"
                       />
+                      {doc.imagePreviewUrl && (
+                        <div className="flex justify-center mt-4">
+                          <button
+                            onClick={() => handleViewDocument(doc.id)}
+                            className="flex items-center gap-2 px-6 py-2 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-base font-bold shadow-md hover:from-indigo-600 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                            style={{ minWidth: '220px' }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 opacity-80">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h9a2.25 2.25 0 002.25-2.25V9.75A2.25 2.25 0 0016.5 7.5h-6.75A2.25 2.25 0 007.5 9.75v7.5A2.25 2.25 0 009.75 19.5h4.5A2.25 2.25 0 0016.5 17.25V9z" />
+                            </svg>
+                            Visualizar Documento
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="mb-4">
-                    <h4 className="text-lg font-bold text-indigo-700 mb-2">Materiais Utilizados</h4>
+                    {/* Coluna direita: Materiais Utilizados */}
+                    <div className="flex flex-col gap-16 w-full max-w-[1000px] ml-16 pl-12">
+                    <h4 className="text-3xl font-extrabold text-purple-700 mb-0 text-center tracking-tight leading-tight drop-shadow-sm select-none">Materiais Utilizados</h4>
                     {doc.extractedData?.materialsUsed.map((material, index) => (
                       <div key={index} className={`mb-6 p-7 rounded-2xl border border-indigo-100 shadow-lg bg-gradient-to-br from-white via-indigo-50 to-white/90 transition-all duration-300 ${material.contaminated ? 'ring-2 ring-red-400 bg-gradient-to-br from-red-50/70 to-white/90' : ''}`}> 
                         {/* Header premium: Checkbox Contaminado no topo à esquerda */}
@@ -524,97 +530,77 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                           </div>
                         {/* Linha premium dos campos principais */}
                         <div className="grid grid-cols-12 gap-5 items-end">
-                          {/* Descrição + Botão + Autocomplete */}
-                          <div className="col-span-6 relative flex items-center">
-                            <label className="sr-only" htmlFor={`desc-${doc.id}-${index}`}>Descrição</label>
-                            <input
-                              id={`desc-${doc.id}-${index}`}
-                              type="text"
-                              value={material.description}
-                              onChange={e => {
-                                handleMaterialChange(doc.id, index, 'description', e.target.value);
-                                setShowSuggestionIdx(doc.id + '-' + index);
-                                setHighlightedIdx(-1);
-                              }}
-                              onFocus={() => setShowSuggestionIdx(doc.id + '-' + index)}
-                              onBlur={() => setTimeout(() => setShowSuggestionIdx(null), 150)}
-                              onKeyDown={e => {
-                                const filtered = materialDbItems.filter(m => m.description.toLowerCase().includes((material.description || '').toLowerCase()));
-                                if (showSuggestionIdx !== doc.id + '-' + index || filtered.length === 0) return;
-                                if (e.key === 'ArrowDown') {
-                                  e.preventDefault();
-                                  setHighlightedIdx(prev => (prev + 1) % filtered.length);
-                                } else if (e.key === 'ArrowUp') {
-                                  e.preventDefault();
-                                  setHighlightedIdx(prev => (prev - 1 + filtered.length) % filtered.length);
-                                } else if (e.key === 'Enter' && highlightedIdx >= 0) {
-                                  e.preventDefault();
-                                  handleMaterialChange(doc.id, index, 'description', filtered[highlightedIdx].description);
-                                  setShowSuggestionIdx(null);
-                                  setHighlightedIdx(-1);
-                                }
-                              }}
-                              className="w-full px-4 py-2 rounded-lg border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base font-medium text-slate-700 bg-white shadow-sm transition-all duration-200 hover:border-indigo-400"
-                              autoComplete="off"
-                              placeholder="Descrição do material"
-                            />
-                            {/* Botão + minimalista */}
-                            {onMaterialDbUpdate && (
-                              <button
-                                type="button"
-                                className="ml-2 text-indigo-700 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-indigo-400 hover:text-indigo-900 transition"
-                                title="Cadastrar novo material"
-                                onClick={() => {
-                                  setShowAddMaterialModal({ docId: doc.id, index, desc: material.description });
-                                  setNewQuickMaterialCode('');
-                                  setAddMaterialError(null);
+                            {/* Descrição */}
+                            <div className="col-span-6">
+                              <label className="block text-xs font-semibold text-slate-500 mb-1" htmlFor={`desc-${doc.id}-${index}`}>Descrição</label>
+                              <CreatableSelect
+                                inputId={`desc-${doc.id}-${index}`}
+                                isClearable
+                                placeholder="Selecione ou digite a descrição"
+                                formatCreateLabel={inputValue => `Cadastrar novo: "${inputValue}"`}
+                                value={material.description ? { label: material.description, value: material.description } : null}
+                                options={materialDbItems.map(m => ({ label: m.description, value: m.description, code: m.code }))}
+                                onChange={option => {
+                                  if (!option) {
+                                    handleMaterialChange(doc.id, index, 'description', '');
+                                    handleMaterialChange(doc.id, index, 'code', '');
+                                    return;
+                                  }
+                                  const selected = materialDbItems.find(m => m.description === option.value);
+                                  handleMaterialChange(doc.id, index, 'description', option.value);
+                                  handleMaterialChange(doc.id, index, 'code', selected ? selected.code : '');
                                 }}
-                                style={{background: 'none', border: 'none', boxShadow: 'none', minWidth: 0, padding: 0, lineHeight: 1}}
-                              >+
-                              </button>
-                            )}
-                            {/* Autocomplete dropdown */}
-                            {showSuggestionIdx === doc.id + '-' + index && (
-                              <ul
-                                ref={suggestionsRef}
-                                className="absolute top-full left-0 right-0 z-10 bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto text-sm"
-                              >
-                                {materialDbItems
-                                  .filter(m => m.description.toLowerCase().includes((material.description || '').toLowerCase()))
-                                  .map((suggestion, idx) => (
-                                    <li
-                                      key={suggestion.id}
-                                      className={
-                                        'px-3 py-2 cursor-pointer hover:bg-indigo-100 ' +
-                                        (idx === highlightedIdx ? 'bg-indigo-100 font-semibold' : '') +
-                                        (highlightedNewMaterialId === suggestion.id ? ' bg-green-100 font-bold ring-2 ring-green-300' : '')
-                                      }
-                                      onMouseDown={() => {
-                                        handleMaterialChange(doc.id, index, 'description', suggestion.description);
-                                        setShowSuggestionIdx(null);
-                                        setHighlightedIdx(-1);
-                                      }}
-                                    >
-                                      {suggestion.description}
-                                    </li>
-                                  ))}
-                              </ul>
-                            )}
+                                onCreateOption={inputValue => {
+                                  // Cria novo material na base
+                                  const newMaterial = {
+                                    id: `db-mat-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                                    description: inputValue,
+                                    code: '',
+                                  };
+                                  onMaterialDbUpdate && onMaterialDbUpdate([...materialDbItems, newMaterial]);
+                                  handleMaterialChange(doc.id, index, 'description', inputValue);
+                                  handleMaterialChange(doc.id, index, 'code', '');
+                                }}
+                                classNamePrefix="react-select"
+                              />
                           </div>
                           {/* Código */}
                           <div className="col-span-3">
                             <label className="block text-xs font-semibold text-slate-500 mb-1" htmlFor={`code-${doc.id}-${index}`}>Código</label>
-                            <input
-                              id={`code-${doc.id}-${index}`}
-                              type="text"
-                              value={material.code || ''}
-                              onChange={e => handleMaterialChange(doc.id, index, 'code', e.target.value)}
-                              className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700"
-                              placeholder="Código"
+                              <CreatableSelect
+                                inputId={`code-${doc.id}-${index}`}
+                                isClearable
+                                placeholder="Selecione ou digite"
+                                formatCreateLabel={inputValue => `Cadastrar novo: \"${inputValue}\"`}
+                                value={material.code ? { label: material.code, value: material.code } : null}
+                                options={materialDbItems.map(m => ({ label: m.code, value: m.code, description: m.description }))}
+                                onChange={option => {
+                                  if (!option) {
+                                    handleMaterialChange(doc.id, index, 'code', '');
+                                    handleMaterialChange(doc.id, index, 'description', '');
+                                    return;
+                                  }
+                                  const selected = materialDbItems.find(m => m.code === option.value);
+                                  handleMaterialChange(doc.id, index, 'code', option.value);
+                                  handleMaterialChange(doc.id, index, 'description', selected ? selected.description : '');
+                                }}
+                                onCreateOption={inputValue => {
+                                  // Cria novo material na base
+                                  const newMaterial = {
+                                    id: `db-mat-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                                    description: '',
+                                    code: inputValue,
+                                  };
+                                  onMaterialDbUpdate && onMaterialDbUpdate([...materialDbItems, newMaterial]);
+                                  handleMaterialChange(doc.id, index, 'code', inputValue);
+                                  handleMaterialChange(doc.id, index, 'description', '');
+                                }}
+                                classNamePrefix="react-select"
                             />
                           </div>
                           {/* Quantidade */}
-                          <div className="col-span-2">
+                            <div className="col-span-2 flex items-center max-w-[90px]">
+                              <div className="w-full">
                             <label className="block text-xs font-semibold text-slate-500 mb-1" htmlFor={`qty-${doc.id}-${index}`}>Qtd</label>
                             <input
                               id={`qty-${doc.id}-${index}`}
@@ -624,15 +610,19 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                               onChange={e => handleMaterialChange(doc.id, index, 'quantity', e.target.value)}
                               className="w-full px-2 py-1.5 rounded border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-medium text-slate-700"
                             />
+                              </div>
                           </div>
                           {/* Botão Remover */}
-                          <div className="col-span-1 flex justify-end items-center">
+                            <div className="col-span-1 flex justify-end items-center h-full">
                             <button
                               onClick={() => handleRemoveMaterial(doc.id, index)}
-                              className="px-2 py-1 rounded bg-gradient-to-br from-red-500 to-red-700 text-white text-xs font-bold shadow hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400"
+                                className="px-2 py-1 rounded bg-gradient-to-br from-red-500 to-red-700 text-white text-xs font-bold shadow hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-400 mt-4"
                               title="Remover material"
-                            >Remover</button>
-                          </div>
+                                style={{alignSelf: 'center'}}
+                              >
+                                Remover
+                              </button>
+                            </div>
                         </div>
                         {/* Linha premium abaixo para Lote e Observação */}
                         <div className="grid grid-cols-12 gap-4 mt-2">
@@ -663,12 +653,17 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                         </div>
                       </div>
                     ))}
-                    <div className="flex justify-end">
+                    <div className="flex justify-end -mt-16 mr-8">
                       <button
+                        type="button"
                         onClick={() => handleAddMaterial(doc.id)}
-                        className="text-indigo-600 text-sm font-medium hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer bg-transparent border-none p-0 m-0"
+                        className="text-purple-700 font-bold text-lg hover:underline focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-150 bg-transparent border-none shadow-none p-0 m-0"
                         style={{minWidth: '0', boxShadow: 'none'}}
-                      >+ Material</button>
+                        title="Adicionar novo material"
+                      >
+                        +Material
+                      </button>
+                    </div>
                     </div>
                   </div>
                 </div>
