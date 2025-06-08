@@ -10,22 +10,56 @@ interface FileUploadProps {
 
 const MAX_FILES_UPLOAD = 25;
 
+// Função de pré-processamento usando Canvas
+function preprocessImage(file, callback) {
+  const img = new window.Image();
+  const reader = new FileReader();
+  reader.onload = e => {
+    img.src = e.target.result;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      // Escala de cinza
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        const avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+        imageData.data[i] = imageData.data[i+1] = imageData.data[i+2] = avg;
+      }
+      ctx.putImageData(imageData, 0, 0);
+      // Retorna a imagem processada como Blob
+      canvas.toBlob(blob => {
+        const processedFile = new File([blob], file.name, { type: 'image/png' });
+        callback(processedFile);
+      }, 'image/png');
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
 export const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect, disabled }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = React.useState<string | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setUploadError(null); 
+    setUploadError(null);
     const files = event.target.files;
     if (files) {
       if (files.length > MAX_FILES_UPLOAD) {
         setUploadError(UI_TEXT.maxFilesError(MAX_FILES_UPLOAD));
-        event.target.value = ''; 
+        event.target.value = '';
         return;
       }
       const fileArray = Array.from(files);
-      onFilesSelect(fileArray);
-      event.target.value = ''; 
+      // Pré-processar todas as imagens antes de passar para onFilesSelect
+      Promise.all(fileArray.map(file =>
+        new Promise<File>(resolve => preprocessImage(file, resolve))
+      )).then(processedFiles => {
+        onFilesSelect(processedFiles);
+      });
+      event.target.value = '';
     }
   };
 

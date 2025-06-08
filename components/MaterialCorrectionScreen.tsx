@@ -371,7 +371,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
       <div className={"flex-1 w-full h-full flex flex-row font-['Inter','Roboto','Montserrat',sans-serif] " + sectionGap} style={{paddingBottom: '120px'}}>
         {/* Coluna esquerda: Lista de pacientes e busca */}
         <div className="w-1/3 min-w-[240px] max-w-xs flex flex-col p-0">
-          <div className="bg-white/90 rounded-3xl shadow-2xl mx-3 mt-8 mb-6 flex flex-col gap-3 pb-6 border border-indigo-100 transition-all duration-300">
+          <div className="bg-gradient-to-br from-white/95 via-indigo-50 to-purple-50/80 rounded-3xl shadow-2xl mx-3 mt-8 mb-6 flex flex-col gap-3 pb-6 border border-indigo-100 transition-all duration-300">
             <div className="flex flex-col gap-3 mb-5 mt-6 px-4">
               <button
                 onClick={() => setShowStatusModal(true)}
@@ -435,7 +435,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
           {filteredPatientGroups.map(patientKey => (
             <section key={patientKey} className="mb-8">
               {groupedEditableDocs[patientKey]?.map(doc => (
-                <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0 bg-white/90 rounded-xl shadow-xl p-6">
+                <div key={doc.id} className="mb-8 pb-8 border-b border-slate-200 last:border-b-0 last:mb-0 last:pb-0 bg-gradient-to-br from-white/95 via-indigo-50 to-purple-50/80 rounded-xl shadow-xl p-6">
                   <div className="grid grid-cols-1 md:grid-cols-[400px_1fr] gap-4 items-start">
                     {/* Coluna esquerda: Campos do paciente */}
                     <div className="flex flex-col gap-3 mb-4 w-full max-w-[400px]">
@@ -560,7 +560,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                                   onMaterialDbUpdate && onMaterialDbUpdate([...materialDbItems, newMaterial]);
                                   handleMaterialChange(doc.id, index, 'description', inputValue);
                                   handleMaterialChange(doc.id, index, 'code', '');
-                                }}
+                                      }}
                                 classNamePrefix="react-select"
                               />
                           </div>
@@ -622,7 +622,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                               >
                                 Remover
                               </button>
-                            </div>
+                          </div>
                         </div>
                         {/* Linha premium abaixo para Lote e Observação */}
                         <div className="grid grid-cols-12 gap-4 mt-2">
