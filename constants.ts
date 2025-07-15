@@ -1,7 +1,7 @@
 import { Hospital, HospitalOption, MaterialDatabaseItem } from './types';
 
 export const COMPANY_NAME = "HealthAdmin";
-export const GEMINI_MODEL_TEXT = 'gemini-2.5-flash-preview-04-17';
+export const GEMINI_MODEL_TEXT = 'gemini-2.5-flash';
 
 // INITIAL_SIMULATED_MATERIAL_DATABASE is the seed data.
 // App.tsx will manage the live material database in localStorage.
