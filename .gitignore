@@ -25,4 +25,4 @@ dist-ssr
 
 # Arquivos de ambiente
 .env.local
-.env
+# .env - REMOVIDO TEMPORARIAMENTE PARA DEPLOY
