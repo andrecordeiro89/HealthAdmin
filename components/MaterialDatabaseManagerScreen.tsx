@@ -1,65 +1,72 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { UI_TEXT } from '../constants';
 import { MaterialDatabaseItem } from '../types';
+import { UI_TEXT } from '../constants';
 import { Alert, AlertType } from './Alert';
 import { Modal } from './Modal';
-import { Spinner } from './Spinner'; // Import Spinner
-import { buttonPrimary, buttonSecondary, buttonLight, buttonDanger, inputBase, labelBase, cardBase, cardLarge } from './uiClasses';
+import { tableHeader, tableCell, zebraRow, buttonPrimary, buttonLight, buttonSecondary, inputBase, buttonSize } from './uiClasses';
 
 interface MaterialDatabaseManagerScreenProps {
   materialDbItems: MaterialDatabaseItem[];
-  onMaterialDbUpdate: (updatedDb: MaterialDatabaseItem[]) => void;
-  onBack: () => void;
-  setGlobalAlert?: (alert: { message: string, type: AlertType } | null) => void;
+  onUpdateMaterialDb: (updatedDb: MaterialDatabaseItem[]) => void;
+  onGoBack: () => void;
 }
 
-export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScreenProps> = ({ 
-    materialDbItems, 
-    onMaterialDbUpdate, 
-    onBack, 
-    setGlobalAlert 
+interface ImportFeedback {
+  success: boolean;
+  message: string;
+  importedCount?: number;
+  skippedCount?: number;
+  details?: string[];
+}
+
+export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScreenProps> = ({
+  materialDbItems,
+  onUpdateMaterialDb,
+  onGoBack,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingMaterialId, setEditingMaterialId] = useState<string | null>(null);
   const [currentEdit, setCurrentEdit] = useState<Partial<MaterialDatabaseItem>>({});
-  
   const [newMaterialDesc, setNewMaterialDesc] = useState('');
   const [newMaterialCode, setNewMaterialCode] = useState('');
-
   const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
   const [materialToDelete, setMaterialToDelete] = useState<MaterialDatabaseItem | null>(null);
-  const [localAlert, setLocalAlert] = useState<{ message: string, type: AlertType } | null>(null);
+  const [localAlert, setLocalAlert] = useState<{ type: AlertType, message: string } | null>(null);
 
-  // States for file import
+  // Import related states
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [csvHasHeader, setCsvHasHeader] = useState<boolean>(true);
-  const [importFeedback, setImportFeedback] = useState<{ message: string, type: AlertType, details?: string[] } | null>(null);
-  const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [csvHasHeader, setCsvHasHeader] = useState(true);
+  const [importFeedback, setImportFeedback] = useState<ImportFeedback | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
+  // Autocomplete states
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const suggestionsRef = useRef<HTMLUListElement>(null);
 
-  // Sugestões filtradas para autocomplete
-  const filteredSuggestions = useMemo(() => {
+  // Autocomplete suggestions based on existing materials
+  const suggestions = useMemo(() => {
     const desc = newMaterialDesc.trim().toLowerCase();
     if (!desc) return [];
     return materialDbItems.filter(m => m.description.toLowerCase().includes(desc));
   }, [newMaterialDesc, materialDbItems]);
 
-  // Verificação de duplicidade em tempo real
+  // Check for duplicate description
   const isDuplicateDesc = useMemo(() => {
     const desc = newMaterialDesc.trim().toLowerCase();
     return desc && materialDbItems.some(m => m.description.toLowerCase() === desc);
   }, [newMaterialDesc, materialDbItems]);
 
-  // Fechar sugestões ao clicar fora
+  // Check for duplicate code
+  const isDuplicateCode = useMemo(() => {
+    const code = newMaterialCode.trim().toLowerCase();
+    return code && materialDbItems.some(m => m.code && m.code.toLowerCase() === code);
+  }, [newMaterialCode, materialDbItems]);
+
+  // Handle clicks outside suggestions
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(event.target as Node)
-      ) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
         setHighlightedIndex(-1);
       }
@@ -72,74 +79,95 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
     };
   }, [showSuggestions]);
 
-  const purpleGradientPrimary = "text-white font-semibold py-2 px-4 rounded-lg shadow-lg bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-white transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out disabled:opacity-60 disabled:saturate-50 disabled:cursor-not-allowed disabled:transform-none h-fit";
-  const purpleGradientLight = "text-purple-700 font-medium py-2 px-4 rounded-lg shadow-sm bg-gradient-to-br from-purple-100 to-indigo-200 hover:from-purple-200 hover:to-indigo-300 border border-purple-300 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-300 focus:ring-offset-white transition-all duration-300 ease-in-out disabled:opacity-70 disabled:cursor-not-allowed";
-  const redGradientDestructive = "text-white font-semibold py-2 px-4 rounded-lg shadow-lg bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 focus:ring-offset-white transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out disabled:opacity-60 disabled:saturate-50 disabled:cursor-not-allowed disabled:transform-none";
-  
-  const smallPurpleGradientAction = "text-white font-semibold text-xs py-1.5 px-3 rounded-md shadow-sm bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-white focus:ring-indigo-500 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:saturate-50";
-  const smallRedGradientDestructive = "text-white font-semibold text-xs py-1.5 px-3 rounded-md shadow-sm bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-white focus:ring-rose-500 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:saturate-50";
+  // Clear local alert after 5 seconds
+  useEffect(() => {
+    if (localAlert) {
+      const timer = setTimeout(() => setLocalAlert(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [localAlert]);
 
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value.toLowerCase());
-  };
-
+  // Filter and sort materials
   const filteredMaterials = useMemo(() => {
     return [...materialDbItems].sort((a,b) => a.description.localeCompare(b.description)).filter(material =>
-      material.description.toLowerCase().includes(searchTerm) ||
-      (material.code && material.code.toLowerCase().includes(searchTerm))
+      material.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (material.code && material.code.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [materialDbItems, searchTerm]);
 
-  const resetAlerts = () => {
-    setLocalAlert(null);
-    setImportFeedback(null);
-    if (setGlobalAlert) {
-      setGlobalAlert(null);
-    }
-  }
+  const handleAddMaterial = () => {
+    const desc = newMaterialDesc.trim();
+    const code = newMaterialCode.trim();
 
-  const handleAddNewMaterial = (e: React.FormEvent) => {
-    e.preventDefault();
-    resetAlerts();
-    if (!newMaterialDesc.trim()) {
-      setLocalAlert({ message: UI_TEXT.errorRequiredField("Descrição"), type: AlertType.Error });
+    if (!desc) {
+      setLocalAlert({ type: AlertType.Warning, message: 'Descrição é obrigatória.' });
       return;
     }
 
-    const codeToCheck = newMaterialCode.trim().toLowerCase();
-    const descToCheck = newMaterialDesc.trim().toLowerCase();
+    if (isDuplicateDesc) {
+      setLocalAlert({ type: AlertType.Warning, message: 'Já existe um material com esta descrição.' });
+      return;
+    }
 
-    const exists = materialDbItems.some(m => 
-        m.description.toLowerCase() === descToCheck || 
-        (codeToCheck && m.code && m.code.toLowerCase() === codeToCheck && m.code !== '')
-    );
-
-    if (exists) {
-      setLocalAlert({ message: UI_TEXT.errorMaterialExists, type: AlertType.Error });
+    if (code && isDuplicateCode) {
+      setLocalAlert({ type: AlertType.Warning, message: 'Já existe um material com este código.' });
       return;
     }
 
     const newMaterial: MaterialDatabaseItem = {
       id: `db-mat-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      description: newMaterialDesc.trim(),
-      code: newMaterialCode.trim() || '', 
+      description: desc,
+      code: code || '',
     };
 
-    const updatedDb = [...materialDbItems, newMaterial].sort((a,b) => a.description.localeCompare(b.description));
-    onMaterialDbUpdate(updatedDb);
+    onUpdateMaterialDb([...materialDbItems, newMaterial]);
     setNewMaterialDesc('');
     setNewMaterialCode('');
-    if (setGlobalAlert) {
-      setGlobalAlert({ message: UI_TEXT.materialAddedSuccess, type: AlertType.Success });
-      setTimeout(() => setGlobalAlert(null), 3000);
-    }
+    setLocalAlert({ type: AlertType.Success, message: 'Material adicionado com sucesso!' });
   };
 
-  const handleEdit = (material: MaterialDatabaseItem) => {
+  const handleEditMaterial = (material: MaterialDatabaseItem) => {
     setEditingMaterialId(material.id);
     setCurrentEdit({ description: material.description, code: material.code });
-    resetAlerts();
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingMaterialId || !currentEdit.description?.trim()) {
+      setLocalAlert({ type: AlertType.Warning, message: 'Descrição é obrigatória.' });
+      return;
+    }
+
+    const desc = currentEdit.description.trim().toLowerCase();
+    const code = currentEdit.code?.trim().toLowerCase() || '';
+
+    // Check for duplicates (excluding the current item being edited)
+    const duplicateDesc = materialDbItems.some(m => 
+      m.id !== editingMaterialId && m.description.toLowerCase() === desc
+    );
+    const duplicateCode = code && materialDbItems.some(m => 
+      m.id !== editingMaterialId && m.code && m.code.toLowerCase() === code
+    );
+
+    if (duplicateDesc) {
+      setLocalAlert({ type: AlertType.Warning, message: 'Já existe um material com esta descrição.' });
+      return;
+    }
+
+    if (duplicateCode) {
+      setLocalAlert({ type: AlertType.Warning, message: 'Já existe um material com este código.' });
+      return;
+    }
+
+    const updatedMaterials = materialDbItems.map(m =>
+      m.id === editingMaterialId
+        ? { ...m, description: currentEdit.description!.trim(), code: currentEdit.code?.trim() || '' }
+        : m
+    );
+
+    onUpdateMaterialDb(updatedMaterials);
+    setEditingMaterialId(null);
+    setCurrentEdit({});
+    setLocalAlert({ type: AlertType.Success, message: 'Material atualizado com sucesso!' });
   };
 
   const handleCancelEdit = () => {
@@ -147,527 +175,443 @@ export const MaterialDatabaseManagerScreen: React.FC<MaterialDatabaseManagerScre
     setCurrentEdit({});
   };
 
-  const handleSaveEdit = (id: string) => {
-    resetAlerts();
-    if (!currentEdit.description?.trim()) {
-      setLocalAlert({ message: UI_TEXT.errorRequiredField("Descrição"), type: AlertType.Error });
-      return;
-    }
-    
-    const codeToCheck = currentEdit.code?.trim().toLowerCase() || '';
-    const descToCheck = currentEdit.description.trim().toLowerCase();
-
-    const exists = materialDbItems.some(m => 
-        m.id !== id && 
-        (m.description.toLowerCase() === descToCheck || 
-        (codeToCheck && m.code && m.code.toLowerCase() === codeToCheck && m.code !== ''))
-    );
-
-    if (exists) {
-        setLocalAlert({ message: UI_TEXT.errorMaterialExists, type: AlertType.Error });
-        return;
-    }
-
-    const updatedDb = materialDbItems.map(m =>
-      m.id === id ? { ...m, description: currentEdit.description!.trim(), code: currentEdit.code?.trim() || '' } : m
-    ).sort((a,b) => a.description.localeCompare(b.description));
-    onMaterialDbUpdate(updatedDb);
-    setEditingMaterialId(null);
-    setCurrentEdit({});
-    if (setGlobalAlert) {
-      setGlobalAlert({ message: UI_TEXT.materialUpdatedSuccess, type: AlertType.Success });
-      setTimeout(() => setGlobalAlert(null), 3000);
-    }
-  };
-
-  const handleInputChangeForEdit = (field: 'description' | 'code', value: string) => {
-    setCurrentEdit(prev => ({ ...prev, [field]: value }));
-  };
-  
-  const handleDelete = (material: MaterialDatabaseItem) => {
+  const handleDeleteMaterial = (material: MaterialDatabaseItem) => {
     setMaterialToDelete(material);
     setShowConfirmDeleteModal(true);
-    resetAlerts();
   };
 
-  const handleConfirmDelete = () => {
-    if (!materialToDelete) return;
-    const updatedDb = materialDbItems.filter(m => m.id !== materialToDelete.id).sort((a,b) => a.description.localeCompare(b.description));
-    onMaterialDbUpdate(updatedDb);
+  const confirmDelete = () => {
+    if (materialToDelete) {
+      const updatedMaterials = materialDbItems.filter(m => m.id !== materialToDelete.id);
+      onUpdateMaterialDb(updatedMaterials);
+      setLocalAlert({ type: AlertType.Success, message: 'Material removido com sucesso!' });
+    }
     setShowConfirmDeleteModal(false);
     setMaterialToDelete(null);
-    if (setGlobalAlert) {
-      setGlobalAlert({ message: UI_TEXT.materialDeletedSuccess, type: AlertType.Success });
-      setTimeout(() => setGlobalAlert(null), 3000);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev => 
+          prev > 0 ? prev - 1 : suggestions.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
+          const selected = suggestions[highlightedIndex];
+          setNewMaterialDesc(selected.description);
+          setNewMaterialCode(selected.code || '');
+          setShowSuggestions(false);
+          setHighlightedIndex(-1);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setHighlightedIndex(-1);
+        break;
     }
   };
 
-  const processImportedItems = (itemsFromParser: {description: string, code: string, originalLineNumber: number}[]) => {
-    let addedCount = 0;
-    let skippedDueToDuplicatesCount = 0;
-    const validationErrorDetails: string[] = [];
-    let currentDbSnapshot = [...materialDbItems]; 
-    const itemsProcessedFromFileThisBatch: {description: string, code: string}[] = [];
-
-    itemsFromParser.forEach(item => {
-        const desc = item.description.trim();
-        const code = item.code.trim();
-
-        if (!desc) {
-            validationErrorDetails.push(UI_TEXT.importErrorLineDetail(item.originalLineNumber, "Descrição ausente."));
-            return; 
-        }
-
-        const descLower = desc.toLowerCase();
-        const codeLower = code.toLowerCase();
-
-        const inDbExists = currentDbSnapshot.some(dbMat => 
-            (code && dbMat.code && dbMat.code.toLowerCase() === codeLower && dbMat.code !== '') || 
-            dbMat.description.toLowerCase() === descLower
-        );
-
-        if (inDbExists) {
-            skippedDueToDuplicatesCount++;
-            return; 
-        }
-
-        const inFileExists = itemsProcessedFromFileThisBatch.some(procItem =>
-            (code && procItem.code && procItem.code.toLowerCase() === codeLower && procItem.code !== '') ||
-            procItem.description.toLowerCase() === descLower
-        );
-
-        if (inFileExists) {
-            validationErrorDetails.push(UI_TEXT.importErrorLineDetail(item.originalLineNumber, UI_TEXT.errorMaterialExistsInFile));
-            return; 
-        }
-
-        const newMaterialEntry: MaterialDatabaseItem = {
-            id: `db-mat-import-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-            description: desc,
-            code: code || '',
-        };
-        currentDbSnapshot.push(newMaterialEntry); 
-        itemsProcessedFromFileThisBatch.push({description: desc, code: code});
-        addedCount++;
-    });
-
-    if (addedCount > 0) {
-       onMaterialDbUpdate(currentDbSnapshot.sort((a,b) => a.description.localeCompare(b.description)));
-    }
-    
-    return { addedCount, skippedDueToDuplicatesCount, validationErrorDetails };
+  const handleSuggestionClick = (suggestion: MaterialDatabaseItem) => {
+    setNewMaterialDesc(suggestion.description);
+    setNewMaterialCode(suggestion.code || '');
+    setShowSuggestions(false);
+    setHighlightedIndex(-1);
   };
 
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    resetAlerts();
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type === 'text/csv' || file.name.endsWith('.csv') || file.type === 'text/plain' || file.name.endsWith('.txt')) {
-        setImportFile(file);
-      } else {
-        setImportFeedback({ message: UI_TEXT.importInvalidFileType, type: AlertType.Error });
-        setImportFile(null);
-        event.target.value = ''; 
-      }
+  // CSV Import functionality
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === 'text/csv') {
+      setImportFile(file);
+      setImportFeedback(null);
     } else {
-      setImportFile(null);
+      setLocalAlert({ type: AlertType.Warning, message: 'Por favor, selecione um arquivo CSV válido.' });
     }
   };
 
-  const handleImportFile = () => {
+  const parseCSV = (csvText: string): { description: string; code: string }[] => {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    const startIndex = csvHasHeader ? 1 : 0;
+    
+    return lines.slice(startIndex).map(line => {
+      const [description, code] = line.split(',').map(cell => cell.trim().replace(/"/g, ''));
+      return { description: description || '', code: code || '' };
+    });
+  };
+
+  const handleImportCSV = async () => {
     if (!importFile) {
-      setImportFeedback({ message: UI_TEXT.importNoFileSelected, type: AlertType.Warning });
+      setLocalAlert({ type: AlertType.Warning, message: 'Selecione um arquivo CSV primeiro.' });
       return;
     }
-    resetAlerts();
+
     setIsImporting(true);
+    setImportFeedback(null);
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      if (!content) {
-        setImportFeedback({ message: UI_TEXT.importFileReadError, type: AlertType.Error });
-        setIsImporting(false);
-        return;
-      }
+    try {
+      const csvText = await importFile.text();
+      const parsedData = parseCSV(csvText);
+      
+      let importedCount = 0;
+      let skippedCount = 0;
+      const details: string[] = [];
+      const newMaterials: MaterialDatabaseItem[] = [];
 
-      const itemsToProcess: {description: string, code: string, originalLineNumber: number}[] = [];
-      const parsingErrorDetails: string[] = [];
-      const lines = content.split(/\r\n|\n|\r/);
-
-      try {
-        if (importFile.name.endsWith('.csv')) {
-          const startIndex = csvHasHeader ? 1 : 0;
-          for (let i = startIndex; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            
-            const partsRaw: string[] = [];
-            let currentPart = '';
-            let inQuotes = false;
-            for (const char of line) {
-                if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    partsRaw.push(currentPart);
-                    currentPart = '';
-                } else {
-                    currentPart += char;
-                }
-            } 
-            partsRaw.push(currentPart); 
-            const parts = partsRaw.map(p => p.trim().replace(/^"|"$/g, ''));
-
-
-            if (parts.length >= 2 && parts[1].trim()) { 
-              itemsToProcess.push({ code: parts[0], description: parts[1], originalLineNumber: i + 1 });
-            } else if (parts.length === 1 && parts[0].trim()) { 
-              itemsToProcess.push({ code: '', description: parts[0], originalLineNumber: i + 1 });
-            } else if (line) { 
-                parsingErrorDetails.push(UI_TEXT.importErrorLineDetail(i + 1, "Formato CSV inválido ou descrição ausente."));
-            }
-          }
-        } else if (importFile.name.endsWith('.txt')) {
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            const parts = line.split(';');
-            if (parts.length >= 2 && parts.slice(1).join(';').trim()) { 
-              itemsToProcess.push({ code: parts[0].trim(), description: parts.slice(1).join(';').trim(), originalLineNumber: i + 1 });
-            } else if (parts.length === 1 && line.startsWith(';') && line.substring(1).trim()) { 
-              itemsToProcess.push({ code: '', description: line.substring(1).trim(), originalLineNumber: i + 1 });
-            } else if (parts.length === 1 && !line.includes(';') && parts[0].trim()) { 
-                itemsToProcess.push({ code: '', description: parts[0].trim(), originalLineNumber: i + 1 });
-            } else if (line) { 
-                parsingErrorDetails.push(UI_TEXT.importErrorLineDetail(i + 1, "Formato TXT inválido, descrição ausente, ou use 'CODIGO;DESCRICAO'."));
-            }
-          }
+      parsedData.forEach((item, index) => {
+        const { description, code } = item;
+        
+        if (!description.trim()) {
+          skippedCount++;
+          details.push(`Linha ${index + (csvHasHeader ? 2 : 1)}: Descrição vazia`);
+          return;
         }
-        
-        const { addedCount, skippedDueToDuplicatesCount, validationErrorDetails } = processImportedItems(itemsToProcess);
-        
-        const allErrorDetails = [...parsingErrorDetails, ...validationErrorDetails];
-        const totalSkippedOrInvalid = skippedDueToDuplicatesCount + validationErrorDetails.length;
 
-        setImportFeedback({ 
-            message: UI_TEXT.importSuccessMessage(addedCount, totalSkippedOrInvalid, parsingErrorDetails.length + validationErrorDetails.length), 
-            type: allErrorDetails.length > 0 ? AlertType.Warning : AlertType.Success,
-            details: allErrorDetails.length > 0 ? allErrorDetails.slice(0,10) : undefined 
+        // Check for duplicates in existing database
+        const existingDesc = materialDbItems.some(m => 
+          m.description.toLowerCase() === description.toLowerCase()
+        );
+        const existingCode = code && materialDbItems.some(m => 
+          m.code && m.code.toLowerCase() === code.toLowerCase()
+        );
+
+        if (existingDesc) {
+          skippedCount++;
+          details.push(`Linha ${index + (csvHasHeader ? 2 : 1)}: Descrição já existe - "${description}"`);
+          return;
+        }
+
+        if (existingCode) {
+          skippedCount++;
+          details.push(`Linha ${index + (csvHasHeader ? 2 : 1)}: Código já existe - "${code}"`);
+          return;
+        }
+
+        // Check for duplicates within the import data
+        const duplicateInImport = newMaterials.some(m => 
+          m.description.toLowerCase() === description.toLowerCase() ||
+          (code && m.code && m.code.toLowerCase() === code.toLowerCase())
+        );
+
+        if (duplicateInImport) {
+          skippedCount++;
+          details.push(`Linha ${index + (csvHasHeader ? 2 : 1)}: Duplicata no arquivo - "${description}"`);
+          return;
+        }
+
+        newMaterials.push({
+          id: `db-mat-${Date.now()}-${Math.random().toString(16).slice(2)}-${index}`,
+          description: description.trim(),
+          code: code.trim(),
         });
-         if (addedCount > 0) {
-            if (setGlobalAlert) {
-                setGlobalAlert({ message: UI_TEXT.importSuccessMessage(addedCount, totalSkippedOrInvalid, parsingErrorDetails.length + validationErrorDetails.length).split(':')[0], type: AlertType.Success});
-                setTimeout(() => setGlobalAlert(null), 4000);
-            }
-        }
+        importedCount++;
+      });
 
-
-      } catch (error) {
-        setImportFeedback({ message: `Erro inesperado ao processar o arquivo: ${(error as Error).message}`, type: AlertType.Error });
-      } finally {
-        setIsImporting(false);
-        setImportFile(null); 
-        const fileInput = document.getElementById('material-import-file-input') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
+      if (newMaterials.length > 0) {
+        onUpdateMaterialDb([...materialDbItems, ...newMaterials]);
       }
-    };
-    reader.onerror = () => {
-      setImportFeedback({ message: UI_TEXT.importFileReadError, type: AlertType.Error });
+
+      setImportFeedback({
+        success: true,
+        message: `Importação concluída: ${importedCount} materiais importados, ${skippedCount} ignorados.`,
+        importedCount,
+        skippedCount,
+        details: details.slice(0, 10) // Limit details to first 10
+      });
+
+      setImportFile(null);
+      // Reset file input
+      const fileInput = document.getElementById('csv-file-input') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+
+    } catch (error) {
+      setImportFeedback({
+        success: false,
+        message: 'Erro ao processar o arquivo CSV. Verifique o formato.',
+      });
+    } finally {
       setIsImporting(false);
-    };
-    reader.readAsText(importFile);
+    }
   };
 
-
-  const inputClass = "mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-700 text-sm"; 
+  // UI Classes
+  const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
+  const buttonClass = "px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2";
+  const primaryButtonClass = `${buttonClass} bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500`;
+  const secondaryButtonClass = `${buttonClass} bg-gray-300 text-gray-700 hover:bg-gray-400 focus:ring-gray-500`;
+  const dangerButtonClass = `${buttonClass} bg-red-600 text-white hover:bg-red-700 focus:ring-red-500`;
   const labelClass = "block text-sm font-medium text-slate-600";
-  
+
   return (
     <div className="w-full max-w-4xl mx-auto bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-xl shadow-xl border border-gray-200">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4">{UI_TEXT.manageMaterialDbTitle}</h2>
-        <button
-          onClick={() => { resetAlerts(); onBack();}}
-          className={buttonLight}
-          aria-label={UI_TEXT.backToHospitalSelectionButton}
-        >
-          {UI_TEXT.backToHospitalSelectionButton}
+        <h1 className="text-2xl font-bold text-gray-900">Gerenciar Base de Materiais</h1>
+        <button onClick={onGoBack} className={buttonSecondary + ' ' + buttonSize}>
+          Voltar
         </button>
       </div>
-      <p className="text-sm text-slate-500 mb-6">{UI_TEXT.manageMaterialDbIntro}</p>
 
-      {localAlert && <Alert message={localAlert.message} type={localAlert.type} onDismiss={() => setLocalAlert(null)} />}
-      {importFeedback && !isImporting && (
-        <Alert 
-            message={importFeedback.message} 
-            type={importFeedback.type} 
-            onDismiss={() => setImportFeedback(null)}
-        >
-            {importFeedback.details && importFeedback.details.length > 0 && (
-                <div className="mt-2 text-xs space-y-1">
-                    <p className="font-semibold">Detalhes (primeiros {importFeedback.details.slice(0,10).length} erros):</p>
-                    <ul className="list-disc list-inside">
-                        {importFeedback.details.slice(0, 10).map((detail, idx) => <li key={idx}>{detail}</li>)}
-                    </ul>
-                </div>
-            )}
-        </Alert>
+      {localAlert && (
+        <div className="mb-4">
+          <Alert type={localAlert.type} message={localAlert.message} />
+        </div>
       )}
 
-
-      {/* Add New Material Form */}
-      <form onSubmit={handleAddNewMaterial} className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-        <h3 className="text-lg font-semibold text-indigo-600 mb-3">{UI_TEXT.addNewMaterialSectionTitle}</h3> 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div className="md:col-span-2 relative">
-            <label htmlFor="newMaterialDesc" className={labelBase}>{UI_TEXT.descriptionInputLabel}</label>
+      {/* Add Material Form */}
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">Adicionar Novo Material</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <label className={labelClass}>Descrição *</label>
             <input
               type="text"
-              id="newMaterialDesc"
               value={newMaterialDesc}
               onChange={(e) => {
                 setNewMaterialDesc(e.target.value);
-                setShowSuggestions(true);
+                setShowSuggestions(e.target.value.length > 0);
                 setHighlightedIndex(-1);
               }}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-              onKeyDown={(e) => {
-                if (!showSuggestions || filteredSuggestions.length === 0) return;
-                if (e.key === 'ArrowDown') {
-                  e.preventDefault();
-                  setHighlightedIndex((prev) => (prev + 1) % filteredSuggestions.length);
-                } else if (e.key === 'ArrowUp') {
-                  e.preventDefault();
-                  setHighlightedIndex((prev) => (prev - 1 + filteredSuggestions.length) % filteredSuggestions.length);
-                } else if (e.key === 'Enter' && highlightedIndex >= 0) {
-                  e.preventDefault();
-                  setNewMaterialDesc(filteredSuggestions[highlightedIndex].description);
-                  setShowSuggestions(false);
-                  setHighlightedIndex(-1);
-                }
-              }}
-              className={inputBase + (isDuplicateDesc ? ' border-red-400 ring-1 ring-red-300' : '')}
-              placeholder="Descrição detalhada do material"
-              aria-required="true"
-              autoComplete="off"
+              onKeyDown={handleKeyDown}
+              className={`${inputClass} ${isDuplicateDesc ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
+              placeholder="Digite a descrição do material"
             />
-            {/* Sugestões de autocomplete */}
-            {showSuggestions && filteredSuggestions.length > 0 && (
+            {isDuplicateDesc && (
+              <p className="text-red-500 text-xs mt-1">Material já existe na base</p>
+            )}
+            {/* Autocomplete Suggestions */}
+            {showSuggestions && suggestions.length > 0 && (
               <ul
                 ref={suggestionsRef}
-                className="absolute z-10 left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto text-sm"
+                className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto mt-1"
               >
-                {filteredSuggestions.map((suggestion, idx) => (
+                {suggestions.slice(0, 5).map((suggestion, index) => (
                   <li
                     key={suggestion.id}
-                    className={
-                      'px-3 py-2 cursor-pointer hover:bg-indigo-100 ' +
-                      (idx === highlightedIndex ? 'bg-indigo-100 font-semibold' : '')
-                    }
-                    onMouseDown={() => {
-                      setNewMaterialDesc(suggestion.description);
-                      setShowSuggestions(false);
-                      setHighlightedIndex(-1);
-                    }}
+                    className={`px-3 py-2 cursor-pointer ${
+                      index === highlightedIndex ? 'bg-indigo-100' : 'hover:bg-gray-100'
+                    }`}
+                    onClick={() => handleSuggestionClick(suggestion)}
                   >
-                    {suggestion.description}
+                    <div className="font-medium">{suggestion.description}</div>
+                    {suggestion.code && (
+                      <div className="text-sm text-gray-500">Código: {suggestion.code}</div>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
-            {/* Feedback de duplicidade em tempo real */}
-            {isDuplicateDesc && (
-              <div className="text-xs text-red-600 mt-1">{UI_TEXT.errorMaterialExists}</div>
-            )}
           </div>
           <div>
-            <label htmlFor="newMaterialCode" className={labelBase}>{UI_TEXT.codeInputLabel}</label>
+            <label className={labelClass}>Código</label>
             <input
               type="text"
-              id="newMaterialCode"
               value={newMaterialCode}
               onChange={(e) => setNewMaterialCode(e.target.value)}
-              className={inputBase}
-              placeholder="Ex: P-205"
+              className={`${inputClass} ${isDuplicateCode ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
+              placeholder="Código do material (opcional)"
             />
+            {isDuplicateCode && (
+              <p className="text-red-500 text-xs mt-1">Código já existe na base</p>
+            )}
           </div>
-          <button
-            type="submit"
-            className={buttonPrimary}
-            aria-label={UI_TEXT.addButtonLabel}
-            disabled={!!isDuplicateDesc}
-          >
-            {UI_TEXT.addButtonLabel}
-          </button>
+          <div className="flex items-end">
+            <button
+              onClick={handleAddMaterial}
+              disabled={Boolean(!newMaterialDesc.trim() || isDuplicateDesc || isDuplicateCode)}
+              className={`${primaryButtonClass} disabled:opacity-50 disabled:cursor-not-allowed w-full`}
+            >
+              Adicionar Material
+            </button>
+          </div>
         </div>
-      </form>
-
-      {/* Import Materials Section */}
-      <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-        <h3 className="text-lg font-semibold text-indigo-600 mb-3">{UI_TEXT.importMaterialsSectionTitle}</h3> 
-        <div className="space-y-3">
-          <div>
-            <label htmlFor="material-import-file-input" className={`${labelBase} mb-1`}>{UI_TEXT.selectFileLabel}</label>
-            <input
-              id="material-import-file-input"
-              type="file"
-              accept=".csv,.txt"
-              onChange={handleFileSelect}
-              className={`${inputBase} p-0 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 transition-colors`}
-              aria-label={UI_TEXT.fileInputLabel}
-            /> 
-          </div>
-          <div className="text-xs text-slate-500 space-y-1">
-            <p>{UI_TEXT.csvFormatInstruction}</p>
-            <p>{UI_TEXT.txtFormatInstruction}</p>
-          </div>
-          <div className="flex items-center">
-            <input
-              id="csvHasHeader"
-              type="checkbox"
-              checked={csvHasHeader}
-              onChange={(e) => setCsvHasHeader(e.target.checked)}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-              aria-labelledby="csvHasHeaderLabelText"
-            /> 
-            <label id="csvHasHeaderLabelText" htmlFor="csvHasHeader" className={`${labelBase} ml-2`}>{UI_TEXT.csvHasHeaderLabel}</label>
-          </div>
-          <button
-            onClick={handleImportFile}
-            disabled={!importFile || isImporting}
-            className={`${buttonPrimary} w-full sm:w-auto`}
-            aria-label={isImporting ? UI_TEXT.importProcessing : UI_TEXT.importButtonLabel}
-          >
-            {isImporting ? UI_TEXT.importProcessing : UI_TEXT.importButtonLabel}
-          </button>
-        </div>
-         {isImporting && <Spinner text={UI_TEXT.importProcessing}/>}
       </div>
 
+      {/* Import CSV Section */}
+      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <h2 className="text-lg font-semibold text-blue-800 mb-3">Importar Materiais via CSV</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+          <div>
+            <label className={labelClass}>Arquivo CSV</label>
+            <input
+              id="csv-file-input"
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-blue-600 mt-1">
+              Formato: descrição,código (uma linha por material)
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={csvHasHeader}
+                onChange={(e) => setCsvHasHeader(e.target.checked)}
+                className="mr-2"
+              />
+              <span className="text-sm text-blue-700">Arquivo tem cabeçalho</span>
+            </label>
+            <button
+              onClick={handleImportCSV}
+              disabled={!importFile || isImporting}
+              className={`${primaryButtonClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isImporting ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+        </div>
+        {importFeedback && (
+          <div className={`mt-3 p-3 rounded-md ${importFeedback.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            <p className="font-medium">{importFeedback.message}</p>
+            {importFeedback.details && importFeedback.details.length > 0 && (
+              <details className="mt-2">
+                <summary className="cursor-pointer font-medium">Ver detalhes</summary>
+                <ul className="mt-1 text-sm">
+                  {importFeedback.details.map((detail, index) => (
+                    <li key={index} className="ml-4">• {detail}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
+        )}
+      </div>
 
-      {/* List and Manage Existing Materials */}
-      <h3 className="text-lg font-semibold text-indigo-600 mb-1">{UI_TEXT.currentMaterialsSectionTitle}</h3> 
-      <label htmlFor="material-search-input" className="sr-only">{UI_TEXT.searchMaterialsPlaceholder}</label>
-      <input
-        id="material-search-input"
-        type="text"
-        placeholder={UI_TEXT.searchMaterialsPlaceholder}
-        value={searchTerm}
-        onChange={handleSearchChange}
-        className={`${inputBase} mb-4 max-w-md`}
-      />
+      {/* Search */}
+      <div className="mb-4">
+        <label className={labelClass}>Buscar Materiais</label>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={inputClass}
+          placeholder="Busque por descrição ou código..."
+        />
+      </div>
 
-      {filteredMaterials.length === 0 && !isImporting ? (
-        <p className="text-slate-500 text-center py-4">{UI_TEXT.noMaterialsInDb}</p>
-      ) : (
-        <div className="overflow-x-auto max-h-[50vh] custom-scrollbar border border-gray-200 rounded-md">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-100 sticky top-0 z-10">
+      {/* Materials Table */}
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className={tableHeader + " text-left"}>Descrição</th>
+              <th className={tableHeader + " text-left"}>Código</th>
+              <th className={tableHeader + " text-center"}>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredMaterials.length === 0 ? (
               <tr>
-                <th scope="col" className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Descrição</th>
-                <th scope="col" className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Código</th>
-                <th scope="col" className="px-4 py-2.5 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Ações</th>
+                <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                  {searchTerm ? 'Nenhum material encontrado.' : 'Nenhum material cadastrado.'}
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredMaterials.map((material) => (
-                <tr key={material.id} className="hover:bg-gray-50/50 transition-colors text-sm">
-                  {editingMaterialId === material.id ? (
-                    <>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                         <label htmlFor={`edit-desc-${material.id}`} className="sr-only">Editar Descrição para {material.description}</label>
-                        <input
-                          id={`edit-desc-${material.id}`}
-                          type="text"
-                          value={currentEdit.description || ''}
-                          onChange={(e) => handleInputChangeForEdit('description', e.target.value)}
-                          className={`${inputBase} text-xs`}
-                          aria-required="true"
-                        />
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        <label htmlFor={`edit-code-${material.id}`} className="sr-only">Editar Código para {material.description}</label>
-                        <input
-                          id={`edit-code-${material.id}`}
-                          type="text"
-                          value={currentEdit.code || ''}
-                          onChange={(e) => handleInputChangeForEdit('code', e.target.value)}
-                          className={`${inputBase} text-xs`}
-                        />
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-center space-x-2">
+            ) : (
+              filteredMaterials.map((material, index) => (
+                <tr key={material.id} className={zebraRow}>
+                  <td className={tableCell}>
+                    {editingMaterialId === material.id ? (
+                      <input
+                        type="text"
+                        value={currentEdit.description || ''}
+                        onChange={(e) => setCurrentEdit({ ...currentEdit, description: e.target.value })}
+                        className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    ) : (
+                      material.description
+                    )}
+                  </td>
+                  <td className={tableCell}>
+                    {editingMaterialId === material.id ? (
+                      <input
+                        type="text"
+                        value={currentEdit.code || ''}
+                        onChange={(e) => setCurrentEdit({ ...currentEdit, code: e.target.value })}
+                        className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    ) : (
+                      material.code || '-'
+                    )}
+                  </td>
+                  <td className={tableCell + " text-center"}>
+                    {editingMaterialId === material.id ? (
+                      <div className="flex justify-center gap-2">
                         <button
-                          onClick={() => handleSaveEdit(material.id)}
-                          className={`${smallPurpleGradientAction}`}
-                          aria-label={`${UI_TEXT.saveMaterialChangesButtonLabel} para ${currentEdit.description || material.description}`}
+                          onClick={handleSaveEdit}
+                          className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
                         >
                           Salvar
                         </button>
                         <button
                           onClick={handleCancelEdit}
-                          className={`${buttonLight.replace("py-2 px-4", "py-1.5 px-3").replace("font-medium", "font-normal text-xs")}`} 
-                           aria-label={`${UI_TEXT.cancelEditButtonLabel} para ${currentEdit.description || material.description}`}
+                          className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
                         >
                           Cancelar
                         </button>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-4 py-2 text-slate-700 align-top">{material.description}</td>
-                      <td className="px-4 py-2 text-slate-600 align-top">{material.code || <span className="italic text-slate-400">N/A</span>}</td>
-                      <td className="px-4 py-2 whitespace-nowrap text-center space-x-2 align-top">
+                      </div>
+                    ) : (
+                      <div className="flex justify-center gap-2">
                         <button
-                          onClick={() => handleEdit(material)}
-                          className={smallPurpleGradientAction}
-                          aria-label={`${UI_TEXT.editMaterialButtonLabel} ${material.description}`}
+                          onClick={() => handleEditMaterial(material)}
+                          className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
                         >
-                          {UI_TEXT.editMaterialButtonLabel}
+                          Editar
                         </button>
                         <button
-                          onClick={() => handleDelete(material)}
-                          className={smallRedGradientDestructive}
-                          aria-label={`${UI_TEXT.deleteMaterialButtonLabel} ${material.description}`}
+                          onClick={() => handleDeleteMaterial(material)}
+                          className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
                         >
-                          {UI_TEXT.deleteMaterialButtonLabel}
+                          Excluir
                         </button>
-                      </td>
-                    </>
-                  )}
+                      </div>
+                    )}
+                  </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      {showConfirmDeleteModal && materialToDelete && (
+      {/* Delete Confirmation Modal */}
+      {showConfirmDeleteModal && (
         <Modal
           isOpen={showConfirmDeleteModal}
-          onClose={() => { setShowConfirmDeleteModal(false); setMaterialToDelete(null); }}
-          title={UI_TEXT.confirmDeleteMaterialTitle}
+          onClose={() => setShowConfirmDeleteModal(false)}
+          title="Confirmar Exclusão"
           size="md"
         >
-          <p className="text-slate-600 mb-6">{UI_TEXT.confirmDeleteMaterialMessage(materialToDelete.description, materialToDelete.code)}</p>
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={() => { setShowConfirmDeleteModal(false); setMaterialToDelete(null); }}
-              className={buttonLight.replace("w-full ", "")}
-              aria-label={UI_TEXT.cancelButton}
-            >
-              {UI_TEXT.cancelButton}
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmDelete}
-              className={buttonDanger}
-              aria-label={UI_TEXT.confirmRemoveButton}
-            >
-              {UI_TEXT.confirmRemoveButton}
-            </button>
+          <div className="space-y-4">
+            <p>
+              Tem certeza que deseja excluir o material "{materialToDelete?.description}"?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowConfirmDeleteModal(false)}
+                className={secondaryButtonClass}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className={dangerButtonClass}
+              >
+                Excluir
+              </button>
+            </div>
           </div>
         </Modal>
       )}

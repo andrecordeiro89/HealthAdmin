@@ -204,8 +204,7 @@ export const HospitalSelector: React.FC<HospitalSelectorProps> = ({
         onRemoveHospital={handleRemoveHospital}
         onEditHospitalName={onEditHospitalName}
       />
-      <h2 className="text-3xl sm:text-4xl font-extrabold text-indigo-700 tracking-tight mb-2 text-center">Selecione o Hospital</h2>
-      <p className="text-base text-slate-500 mb-8 text-center">Escolha o hospital para iniciar o gerenciamento de documentos.</p>
+
       <div ref={cardsContainerRef} className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-10 px-2">
         {hospitals.map(h => (
           <button
@@ -215,26 +214,13 @@ export const HospitalSelector: React.FC<HospitalSelectorProps> = ({
             style={{boxShadow: '0 6px 32px 0 rgba(80,60,180,0.10), 0 1.5px 6px 0 rgba(80,60,180,0.08)'}}
             title={selectedHospital === h.id ? 'Hospital selecionado' : 'Selecionar hospital'}
           >
-            {/* Ícone temático premium para hospital */}
-            <span className="mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14" viewBox="0 0 48 48" fill="none">
-                <defs>
-                  <linearGradient id="hospital-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#a5b4fc" />
-                    <stop offset="1" stopColor="#6366f1" />
-                  </linearGradient>
-                </defs>
-                <rect x="6" y="12" width="36" height="28" rx="6" fill="url(#hospital-grad)" />
-                <rect x="14" y="24" width="6" height="8" rx="2" fill="#fff" />
-                <rect x="28" y="24" width="6" height="8" rx="2" fill="#fff" />
-                <rect x="22" y="18" width="4" height="8" rx="2" fill="#fff" />
-                <rect x="20" y="32" width="8" height="4" rx="2" fill="#ede9fe" />
-                <path d="M24 22v4" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
-                <path d="M22 24h4" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
+            {/* Ícone de hospital com cruz médica */}
+            <div className="mb-4 p-3 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 shadow-lg group-hover:shadow-xl transition-all duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-indigo-600 group-hover:text-purple-600 transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
               </svg>
-            </span>
-            <span className="text-lg font-bold text-indigo-800 mb-1 tracking-wide group-hover:text-purple-700 transition-colors duration-200">{h.name}</span>
-            <span className="text-xs text-slate-400">ID: {h.id}</span>
+            </div>
+            <span className="text-lg font-bold text-indigo-800 tracking-wide group-hover:text-purple-700 transition-colors duration-200 text-center">{h.name}</span>
           </button>
         ))}
       </div>

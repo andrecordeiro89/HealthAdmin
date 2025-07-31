@@ -15,7 +15,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
     // Isso garante que `process.env.GEMINI_API_KEY` seja substituído 
     // pelo valor real durante o build.
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
     },
   };
 });

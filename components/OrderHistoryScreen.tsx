@@ -107,150 +107,233 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     <>
       <style>{`
         html, body { margin: 0 !important; padding: 0 !important; }
+        .sidebar-scrollbar::-webkit-scrollbar { width: 4px; }
+        .sidebar-scrollbar::-webkit-scrollbar-track { background: rgba(99, 102, 241, 0.1); border-radius: 2px; }
+        .sidebar-scrollbar::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 2px; }
+        .sidebar-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
       `}</style>
-      <div className="min-h-screen w-full flex flex-col bg-gradient-to-br from-white via-indigo-50 to-purple-50 text-slate-700 m-0 p-0">
-        {/* Header premium com logotipo e linha sombreada, absolutamente colado ao topo */}
-        <div className="w-full flex flex-col items-center select-none m-0 p-0" style={{marginTop: 0, paddingTop: 0}}>
-          <div className="flex flex-row items-center justify-center mb-2 mt-0" style={{marginTop: 0}}>
-            <span className="text-2xl sm:text-4xl font-extrabold text-indigo-700 tracking-tight" style={{letterSpacing: '0.01em'}}>
-              HealthAdmin
-            </span>
-            <svg width="48" height="24" viewBox="0 0 48 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-2">
-              <polyline points="2,12 11,12 15,21 21,3 27,18 32,12 46,12" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          {/* Linha premium do header */}
-          <div className="w-full flex justify-center items-center">
-            <div className="w-full max-w-screen-2xl flex items-center">
-              <div className="flex-1">
-                <div className="w-full h-[2.5px] rounded-full shadow-md" style={{background: 'linear-gradient(90deg, #fff 0%, #e0e7ff 40%, #ede9fe 60%, #fff 100%)', boxShadow: '0 2px 8px 0 rgba(80,60,180,0.07)'}} />
+      <div className="min-h-screen w-full flex bg-gradient-to-br from-white via-indigo-50 to-purple-50 text-slate-700 m-0 p-0">
+        {/* Sidebar Premium */}
+        <div className="w-80 min-h-screen bg-gradient-to-b from-white/95 via-indigo-50/90 to-purple-50/95 backdrop-blur-sm border-r border-indigo-200/60 shadow-2xl flex flex-col" style={{boxShadow: '4px 0 24px 0 rgba(80,60,180,0.12)'}}>
+          {/* Header do Sidebar */}
+          <div className="p-6 border-b border-indigo-200/50">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <FaRegClock className="text-white w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-indigo-800 leading-tight">Histórico</h2>
+                <p className="text-xs text-slate-600 font-medium">Pedidos & Relatórios</p>
+              </div>
+            </div>
+            
+            {/* Estatísticas Compactas */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gradient-to-br from-indigo-100/80 to-white/90 rounded-xl p-3 border border-indigo-200/40">
+                <div className="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">Total</div>
+                <div className="text-lg font-bold text-indigo-800">{filteredHistory.length}</div>
+              </div>
+              <div className="bg-gradient-to-br from-purple-100/80 to-white/90 rounded-xl p-3 border border-purple-200/40">
+                <div className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-1">Hospitais</div>
+                <div className="text-lg font-bold text-purple-800">{new Set(filteredHistory.map(h => h.hospital)).size}</div>
               </div>
             </div>
           </div>
-        </div>
-        {/* Card premium centralizado */}
-        <div className="flex flex-1 flex-col items-center justify-center w-full px-2 pb-12">
-          {/* Aviso premium de expiração do histórico */}
-          <div className="w-full max-w-3xl mb-6">
-            <div className="flex flex-row items-center gap-3 bg-gradient-to-br from-indigo-50 via-white to-purple-50 border-2 border-indigo-200 rounded-2xl shadow-lg px-6 py-4">
-              <FaRegClock className="text-indigo-500 w-7 h-7" />
-              <div className="flex-1">
-                <span className="block text-base sm:text-lg font-bold text-indigo-800 mb-1">Atenção: Expiração Automática do Histórico</span>
-                <span className="block text-sm sm:text-base text-slate-600 font-medium">Por segurança e performance, os dados do seu histórico de consumo ficam disponíveis por até <b>10 dias</b> após o registro. Após esse período, eles serão removidos automaticamente do sistema. Recomendamos exportar os relatórios importantes antes do vencimento.</span>
-              </div>
-            </div>
-          </div>
-          <div className="w-full max-w-3xl bg-white/90 rounded-3xl shadow-2xl border border-indigo-100 p-8 flex flex-col gap-8 items-center" style={{boxShadow: '0 6px 32px 0 rgba(80,60,180,0.10), 0 1.5px 6px 0 rgba(80,60,180,0.08)'}}>
-            {/* Filtros premium no topo */}
-            <div className="w-full flex flex-col sm:flex-row gap-4 items-center justify-center mb-4">
-              <div className="flex flex-col sm:flex-row gap-4 w-full max-w-2xl items-center justify-center">
-                <div className="flex flex-col items-start w-full sm:w-auto">
-                  <label htmlFor="hospital-select" className="text-xs font-semibold text-slate-700 mb-1">Hospital:</label>
-                  <select id="hospital-select" aria-label="Selecionar hospital" value={selectedHospital} onChange={e => setSelectedHospital(e.target.value)}
-                    className="rounded-xl shadow-md border-2 border-indigo-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-300 px-4 py-2 text-base bg-white transition min-w-[160px] outline-none">
-                    <option value="">Todos</option>
-                    {hospitalOptions.map(h => (
-                      <option key={h.id} value={h.id}>{h.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex flex-col items-start w-full sm:w-auto">
-                  <label htmlFor="start-date" className="text-xs font-semibold text-slate-700 mb-1">Data Inicial:</label>
-                  <input id="start-date" aria-label="Data inicial" type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                    className="rounded-xl shadow-md border-2 border-indigo-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-300 px-4 py-2 text-base bg-white transition min-w-[130px] outline-none" />
-                </div>
-                <div className="flex flex-col items-start w-full sm:w-auto">
-                  <label htmlFor="end-date" className="text-xs font-semibold text-slate-700 mb-1">Data Final:</label>
-                  <input id="end-date" aria-label="Data final" type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                    className="rounded-xl shadow-md border-2 border-indigo-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-300 px-4 py-2 text-base bg-white transition min-w-[130px] outline-none" />
-                </div>
-              </div>
-            </div>
-            {/* Divisor visual premium */}
-            <div className="w-full h-[2px] bg-gradient-to-r from-indigo-50 via-indigo-100 to-purple-50 rounded-full shadow mb-4" />
-            {/* Tabela premium de relatório */}
-            {showReport && (
-              <>
-                <div className="w-full overflow-x-auto max-h-[60vh] mb-2 rounded-2xl border border-indigo-100 shadow-lg">
-                  <table className="min-w-full text-sm text-left rounded-2xl overflow-hidden">
-                    <thead className={tableHeader + " bg-gradient-to-r from-indigo-50 to-white border-b-2 border-indigo-200 sticky top-0 z-10"}>
-                      <tr>
-                        <th className={tableCell + " font-bold text-indigo-700 uppercase tracking-wide"}>Unidade</th>
-                        <th className={tableCell + " font-bold text-indigo-700 uppercase tracking-wide"}>Material</th>
-                        <th className={tableCell + " font-bold text-indigo-700 uppercase tracking-wide"}>Código</th>
-                        <th className={tableCell + " font-bold text-indigo-700 uppercase tracking-wide text-center"}>Qtd. Consumida</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reportRows.length === 0 && (
-                        <tr><td colSpan={4} className="text-center text-slate-400 py-6 font-semibold">Nenhum material encontrado para o período selecionado.</td></tr>
-                      )}
-                      {reportRows.map((row, idx) => (
-                        <tr key={idx} className={zebraRow + " transition-all duration-150 hover:bg-indigo-100/60 cursor-pointer"}>
-                          <td className={tableCell + " font-semibold text-indigo-800 align-top"}>{row.hospitalName}</td>
-                          <td className={tableCell + " text-indigo-700 align-top"}>{row.materialDescription}</td>
-                          <td className={tableCell + " text-indigo-700 align-top"}>{row.materialCode || '-'}</td>
-                          <td className={tableCell + " text-center text-indigo-700 font-bold align-top"}>{row.consumedQuantity}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-            {/* Tabela de pedidos históricos padrão */}
-            <div className="w-full overflow-x-auto max-h-[60vh] rounded-2xl border border-indigo-100 shadow-lg mb-4">
-              <table className="min-w-full text-sm text-left rounded-2xl overflow-hidden">
-                <thead className={tableHeader + " bg-gradient-to-r from-indigo-50 to-white border-b-2 border-indigo-200"}>
-                  <tr>
-                    <th className={tableCell + " font-bold text-indigo-700 uppercase tracking-wide"}>ID do Pedido</th>
-                    <th className={tableCell + " font-bold text-indigo-700 uppercase tracking-wide"}>Hospital</th>
-                    <th className={tableCell + " font-bold text-indigo-700 uppercase tracking-wide"}>Data</th>
-                    <th className={tableCell + " font-bold text-indigo-700 uppercase tracking-wide"}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.map((order, idx) => (
-                    <tr key={order.orderId} className={zebraRow + " transition-all duration-150 hover:bg-indigo-50/60"}>
-                      <td className={tableCell}>{order.orderId}</td>
-                      <td className={tableCell}>{hospitalOptions.find(h => h.id === order.hospital)?.name || order.hospital}</td>
-                      <td className={tableCell}>{order.orderDate}</td>
-                      <td className={tableCell}>
-                        <button onClick={() => onReprintPdf(order)} className={buttonLight + " " + buttonSize + " min-w-[120px]"} title="Reimprimir PDF">Reimprimir PDF</button>
-                      </td>
-                    </tr>
+
+          {/* Filtros Compactos */}
+          <div className="p-6 flex-1 sidebar-scrollbar overflow-y-auto">
+            <div className="space-y-5">
+              {/* Filtro Hospital */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Hospital</label>
+                <select 
+                  value={selectedHospital} 
+                  onChange={e => setSelectedHospital(e.target.value)}
+                  className="w-full rounded-lg border-2 border-indigo-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 px-3 py-2 text-sm bg-white/90 transition outline-none shadow-sm"
+                >
+                  <option value="">Todos os hospitais</option>
+                  {hospitalOptions.map(h => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
                   ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Divisor visual premium */}
-            <div className="w-full h-[2px] bg-gradient-to-r from-indigo-50 via-indigo-100 to-purple-50 rounded-full shadow mb-4" />
-            {/* Botões centralizados na parte de baixo do card */}
-            <div className="w-full flex flex-row items-center justify-center gap-4 mt-2">
-              <button onClick={onBack} className={buttonPrimary + " " + buttonSize + " min-w-[120px]"} aria-label="Voltar">Voltar</button>
-              <button onClick={handleGenerateReport} className={purpleGradientLight + " min-w-[220px] text-base py-3 px-8"} aria-label="Gerar relatório global do período">
-                Gerar Relatório Global do Período
-              </button>
-              {showReport && (
-                <button onClick={handleExportPdf} className="flex flex-row items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-lg shadow bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white border border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-300 ease-in-out uppercase min-w-[120px]" aria-label="Exportar PDF do período">
-                  <FaDownload className="w-4 h-4" /> PDF PERÍODO
+                </select>
+              </div>
+
+              {/* Filtros de Data */}
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Data Inicial</label>
+                  <input 
+                    type="date" 
+                    value={startDate} 
+                    onChange={e => setStartDate(e.target.value)}
+                    className="w-full rounded-lg border-2 border-indigo-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 px-3 py-2 text-sm bg-white/90 transition outline-none shadow-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Data Final</label>
+                  <input 
+                    type="date" 
+                    value={endDate} 
+                    onChange={e => setEndDate(e.target.value)}
+                    className="w-full rounded-lg border-2 border-indigo-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 px-3 py-2 text-sm bg-white/90 transition outline-none shadow-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Divisor */}
+              <div className="h-px bg-gradient-to-r from-transparent via-indigo-200 to-transparent my-6" />
+
+              {/* Ações Rápidas */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">Ações</h3>
+                
+                <button 
+                  onClick={handleGenerateReport} 
+                  className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg transition-all duration-200 text-sm"
+                >
+                  Gerar Relatório
                 </button>
-              )}
+
+                {showReport && (
+                  <button 
+                    onClick={handleExportPdf} 
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg transition-all duration-200 text-sm flex items-center justify-center gap-2"
+                  >
+                    <FaDownload className="w-3 h-3" />
+                    Exportar PDF
+                  </button>
+                )}
+
+                <button 
+                  onClick={onBack} 
+                  className="w-full bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg transition-all duration-200 text-sm"
+                >
+                  Voltar
+                </button>
+              </div>
+
+              {/* Aviso de Expiração Compacto */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 mt-6">
+                <div className="flex items-start gap-3">
+                  <FaRegClock className="text-amber-600 w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-amber-800 mb-1">Expiração Automática</div>
+                    <div className="text-xs text-amber-700 leading-relaxed">
+                      Dados removidos automaticamente após <strong>10 dias</strong>. Exporte relatórios importantes.
+                    </div>
+                    {localStorageExpiry && (
+                      <div className="text-xs text-amber-600 font-semibold mt-2">
+                        Expira em: {localStorageExpiry}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-            {/* Toast de feedback */}
-            {showToast && (
-              <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-white border border-indigo-200 shadow-lg rounded-xl px-6 py-3 text-indigo-700 font-semibold text-base animate-fade-in">
-                Relatório gerado!
-              </div>
-            )}
-            {/* Expiração do localStorage */}
-            {localStorageExpiry && (
-              <div className="w-full flex justify-end mt-1">
-                <span className="text-xs text-slate-500">Expiração dos dados locais: <b>{localStorageExpiry}</b></span>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Área Principal */}
+        <div className="flex-1 flex flex-col min-h-screen">
+          {/* Header Principal */}
+          <div className="bg-white/80 backdrop-blur-sm border-b border-indigo-200/60 px-8 py-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-indigo-800 mb-1">HealthAdmin</h1>
+                <p className="text-sm text-slate-600 font-medium">
+                  {filteredHistory.length} pedido{filteredHistory.length !== 1 ? 's' : ''} encontrado{filteredHistory.length !== 1 ? 's' : ''}
+                  {selectedHospital && ` • ${hospitalOptions.find(h => h.id === selectedHospital)?.name}`}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Conteúdo Principal */}
+          <div className="flex-1 p-8 overflow-auto">
+            {/* Tabela de Relatório Global */}
+            {showReport && (
+              <div className="mb-8">
+                <div className="bg-white/90 rounded-2xl shadow-xl border border-indigo-100 overflow-hidden" style={{boxShadow: '0 4px 24px 0 rgba(80,60,180,0.08)'}}>
+                  <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+                    <h3 className="text-lg font-bold text-white">Relatório de Consumo Global</h3>
+                  </div>
+                  <div className="overflow-x-auto max-h-[50vh]">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-gradient-to-r from-indigo-50 to-white border-b-2 border-indigo-200 sticky top-0">
+                        <tr>
+                          <th className="px-6 py-3 text-left font-bold text-indigo-700 uppercase tracking-wide">Unidade</th>
+                          <th className="px-6 py-3 text-left font-bold text-indigo-700 uppercase tracking-wide">Material</th>
+                          <th className="px-6 py-3 text-left font-bold text-indigo-700 uppercase tracking-wide">Código</th>
+                          <th className="px-6 py-3 text-center font-bold text-indigo-700 uppercase tracking-wide">Qtd. Consumida</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportRows.length === 0 && (
+                          <tr><td colSpan={4} className="text-center text-slate-400 py-8 font-semibold">Nenhum material encontrado para o período selecionado.</td></tr>
+                        )}
+                        {reportRows.map((row, idx) => (
+                          <tr key={idx} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-indigo-50/30'} hover:bg-indigo-100/60 transition-colors duration-150`}>
+                            <td className="px-6 py-3 font-semibold text-indigo-800">{row.hospitalName}</td>
+                            <td className="px-6 py-3 text-indigo-700">{row.materialDescription}</td>
+                            <td className="px-6 py-3 text-indigo-700">{row.materialCode || '-'}</td>
+                            <td className="px-6 py-3 text-center text-indigo-700 font-bold">{row.consumedQuantity}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tabela Principal de Histórico */}
+            <div className="bg-white/90 rounded-2xl shadow-xl border border-indigo-100 overflow-hidden" style={{boxShadow: '0 4px 24px 0 rgba(80,60,180,0.08)'}}>
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+                <h3 className="text-lg font-bold text-white">Histórico de Pedidos</h3>
+              </div>
+              <div className="overflow-x-auto max-h-[60vh]">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gradient-to-r from-indigo-50 to-white border-b-2 border-indigo-200 sticky top-0">
+                    <tr>
+                      <th className="px-6 py-3 text-left font-bold text-indigo-700 uppercase tracking-wide">ID do Pedido</th>
+                      <th className="px-6 py-3 text-left font-bold text-indigo-700 uppercase tracking-wide">Hospital</th>
+                      <th className="px-6 py-3 text-left font-bold text-indigo-700 uppercase tracking-wide">Data</th>
+                      <th className="px-6 py-3 text-left font-bold text-indigo-700 uppercase tracking-wide">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.length === 0 && (
+                      <tr><td colSpan={4} className="text-center text-slate-400 py-8 font-semibold">Nenhum pedido encontrado.</td></tr>
+                    )}
+                    {filteredHistory.map((order, idx) => (
+                      <tr key={order.orderId} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-indigo-50/30'} hover:bg-indigo-100/60 transition-colors duration-150`}>
+                        <td className="px-6 py-3 font-mono text-indigo-800 font-semibold">{order.orderId}</td>
+                        <td className="px-6 py-3 text-indigo-700">{hospitalOptions.find(h => h.id === order.hospital)?.name || order.hospital}</td>
+                        <td className="px-6 py-3 text-indigo-700">{order.orderDate}</td>
+                        <td className="px-6 py-3">
+                          <button 
+                            onClick={() => onReprintPdf(order)} 
+                            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold py-1.5 px-4 rounded-lg shadow-sm transition-all duration-200 text-xs"
+                            title="Reimprimir PDF"
+                          >
+                            Reimprimir PDF
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Toast de feedback */}
+        {showToast && (
+          <div className="fixed top-6 right-6 z-50 bg-white border border-indigo-200 shadow-xl rounded-xl px-6 py-3 text-indigo-700 font-semibold text-sm animate-fade-in">
+            ✅ Relatório gerado com sucesso!
+          </div>
+        )}
       </div>
     </>
   );

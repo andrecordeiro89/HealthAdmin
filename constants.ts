@@ -48,7 +48,7 @@ export const UI_TEXT = {
   appName: `${COMPANY_NAME} - Sistema de Reposição OPME`,
   selectHospitalPrompt: "Selecione o Hospital",
   confirmHospitalButton: "Confirmar Hospital e Adicionar Documentos",
-  documentManagementTitle: (hospitalName: string) => `Gerenciar Documentos de Consumo - ${hospitalName}`,
+  documentManagementTitle: (hospitalName: string) => hospitalName,
   addDocumentButton: "Adicionar Documentos (Imagens)",
   processAllDocumentsButton: "Processar Documentos",
   processingDocumentsMessage: "Processando documentos... Por favor, aguarde.",

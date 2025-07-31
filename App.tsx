@@ -12,7 +12,7 @@ import { ExtractionReviewScreen } from './components/ExtractionReviewScreen';
 import { Modal } from './components/Modal';
 import { OrderForm } from './components/OrderForm';
 import { OrderHistoryScreen } from './components/OrderHistoryScreen';
-import { MaterialDatabaseManagerScreen } from './components/MaterialDatabaseManagerScreen'; 
+import { MaterialDatabaseManagerScreen } from './components/MaterialDatabaseManagerScreen';
 import { extractOrderDetailsFromText } from './services/geminiService';
 import { generateConsolidatedOrderPdf, generateGlobalMaterialConsumptionPdf } from './services/pdfService';
 import LZString from 'lz-string';
@@ -161,7 +161,7 @@ const App: React.FC = () => {
     }
   }, [orderHistory, hospitalOptions, materialDatabase]);
 
-  const handleHospitalSelect = (hospitalId: string) => { 
+  const handleHospitalSelect = (hospitalId: string) => {
     const hospitalDetails = hospitalOptions.find(h => h.id === hospitalId);
     setSelectedHospital(hospitalId);
     setSelectedHospitalName(hospitalDetails?.name || hospitalId);
@@ -184,7 +184,7 @@ const App: React.FC = () => {
     }
     const newHospitalId = `hosp-${trimmedName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
     const newHospital: HospitalOption = { id: newHospitalId, name: trimmedName };
-    setHospitalOptions(prev => [...prev, newHospital].sort((a,b) => a.name.localeCompare(b.name)));
+    setHospitalOptions(prev => [...prev, newHospital].sort((a, b) => a.name.localeCompare(b.name)));
     addToast(UI_TEXT.hospitalAddedSuccessMessage(trimmedName), AlertType.Success);
     return true;
   };
@@ -204,9 +204,9 @@ const App: React.FC = () => {
     setAppState(AppState.MANAGE_MATERIAL_DATABASE);
   };
 
-  const handleAddDocuments = (files: File[]) => { 
+  const handleAddDocuments = (files: File[]) => {
     const newDocuments: ProcessedDocumentEntry[] = files.map(file => ({
-      id: `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}-${Math.random().toString(36).substring(2,7)}`,
+      id: `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}-${Math.random().toString(36).substring(2, 7)}`,
       fileName: file.name,
       file: file,
       status: 'pending',
@@ -219,13 +219,13 @@ const App: React.FC = () => {
 
   const handleRemoveDocument = (docId: string) => {
     setDocuments(prev => prev.filter(doc => {
-      if (doc.imagePreviewUrl && doc.id === docId) { 
+      if (doc.imagePreviewUrl && doc.id === docId) {
         URL.revokeObjectURL(doc.imagePreviewUrl);
       }
       return doc.id !== docId;
     }));
   };
-  
+
   useEffect(() => {
     return () => {
       documentsRef.current.forEach(doc => {
@@ -234,12 +234,12 @@ const App: React.FC = () => {
         }
       });
     };
-  }, []); 
+  }, []);
 
-  const fileToGenerativePart = async (file: File): Promise<{mimeType: string, data: string}> => {
+  const fileToGenerativePart = async (file: File): Promise<{ mimeType: string, data: string }> => {
     const base64EncodedDataPromise = new Promise<string>((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve((reader.result as string).split(',')[1]); 
+      reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
       reader.readAsDataURL(file);
     });
     return {
@@ -309,83 +309,83 @@ const App: React.FC = () => {
   ) => {
     let currentMaterialDb = [...materialDatabase]; // Use state variable
     correctedItemsForDb.forEach(item => {
-        // Normalize corrected values
-        const correctedDescNormalized = item.correctedDescription.trim().toLowerCase();
-        const correctedCodeNormalized = item.correctedCode?.trim().toLowerCase() || '';
+      // Normalize corrected values
+      const correctedDescNormalized = item.correctedDescription.trim().toLowerCase();
+      const correctedCodeNormalized = item.correctedCode?.trim().toLowerCase() || '';
 
-        if (correctedCodeNormalized) { 
-            const existingByCodeIdx = currentMaterialDb.findIndex(dbMat => dbMat.code && dbMat.code.trim().toLowerCase() === correctedCodeNormalized);
-            if (existingByCodeIdx > -1) { 
-                // If code exists, update its description if the new one is different (and not just a case change)
-                if (currentMaterialDb[existingByCodeIdx].description.trim().toLowerCase() !== correctedDescNormalized) {
-                    currentMaterialDb[existingByCodeIdx].description = item.correctedDescription.trim(); // Use original casing
-                }
-            } else { 
-                // Code doesn't exist, check if description exists (to avoid adding a new entry if only code was added to an existing description)
-                const existingByDescIdx = currentMaterialDb.findIndex(dbMat => dbMat.description.trim().toLowerCase() === correctedDescNormalized && !dbMat.code);
-                if (existingByDescIdx > -1) {
-                    // Description exists without a code, now we are adding a code to it.
-                    currentMaterialDb[existingByDescIdx].code = item.correctedCode!.trim(); // Use original casing
-                } else {
-                    // Neither code nor description (as primary key) exists, add new.
-                    currentMaterialDb.push({
-                        id: `usercorr-code-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-                        description: item.correctedDescription.trim(),
-                        code: item.correctedCode!.trim(),
-                    });
-                }
-            }
-        } else { // No corrected code provided
-            const existingByDescIdx = currentMaterialDb.findIndex(dbMat => dbMat.description.trim().toLowerCase() === correctedDescNormalized);
-            if (existingByDescIdx > -1) {
-                // Description exists. If it had a code, and now we're saying no code, clear it.
-                // Or if it's just a confirmation of an existing item without code.
-                if (currentMaterialDb[existingByDescIdx].code) { // It had a code, now it doesn't
-                    // This case might be complex: are we removing a code or confirming a description for an item that ALSO exists with code?
-                    // For simplicity, if a user corrects an item to have NO code, and an item with that description exists,
-                    // we assume they are confirming/updating that description. If it had a code, it implies removing it.
-                    // However, we should be careful not to create a duplicate description if an item with the same desc but *different* code exists.
-                    // This logic prioritizes the user's explicit correction for *this* instance.
-                    // A more robust system might flag potential conflicts.
-                    // For now, if found by desc, and corrected code is empty, ensure the found item's code is also empty.
-                    // This is tricky because 'learning' should ideally not overwrite distinct items.
-                    // Let's assume if they clear the code, they mean this specific entry has no code.
-                    // If the database item found by description already had a code, we might not want to clear it globally from one correction.
-                    // This part of "learning" is the most complex.
-                    // Let's refine: if a description matches, and the DB item has a code, but the correction has no code,
-                    // we DON'T modify the DB item's code. We assume the user is correcting the description for an entry that should not have a code.
-                    // So, if it's found by desc, and the DB item has no code, it's a match (or minor text update).
-                    // If it's found by desc, and the DB item HAS a code, but corrected code is EMPTY, this implies a *new* entry
-                    // for the DB that has this description but explicitly no code, *unless* the original item being corrected also had no code.
-
-                    // Simpler: If description matches, and the DB entry has no code, we are good.
-                    // If description matches, and DB entry HAS a code, but user provides NO code for correction, this correction
-                    // might be for an item that is distinct from the coded one in the DB.
-                    // So, only add if no exact match (desc + no code) is found.
-                    const trulyNewEntry = !currentMaterialDb.some(dbMat => 
-                        dbMat.description.trim().toLowerCase() === correctedDescNormalized && 
-                        (dbMat.code?.trim().toLowerCase() || '') === ''
-                    );
-                    if (trulyNewEntry) {
-                         currentMaterialDb.push({
-                            id: `usercorr-desc-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-                            description: item.correctedDescription.trim(),
-                            code: '', // Explicitly no code
-                        });
-                    }
-
-                }
-                // else: description exists and has no code in DB, so it's a match or minor text update to description - already handled if desc changed.
-            } else { // Description doesn't exist in DB
-                 currentMaterialDb.push({
-                    id: `usercorr-desc-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-                    description: item.correctedDescription.trim(),
-                    code: '', 
-                });
-            }
+      if (correctedCodeNormalized) {
+        const existingByCodeIdx = currentMaterialDb.findIndex(dbMat => dbMat.code && dbMat.code.trim().toLowerCase() === correctedCodeNormalized);
+        if (existingByCodeIdx > -1) {
+          // If code exists, update its description if the new one is different (and not just a case change)
+          if (currentMaterialDb[existingByCodeIdx].description.trim().toLowerCase() !== correctedDescNormalized) {
+            currentMaterialDb[existingByCodeIdx].description = item.correctedDescription.trim(); // Use original casing
+          }
+        } else {
+          // Code doesn't exist, check if description exists (to avoid adding a new entry if only code was added to an existing description)
+          const existingByDescIdx = currentMaterialDb.findIndex(dbMat => dbMat.description.trim().toLowerCase() === correctedDescNormalized && !dbMat.code);
+          if (existingByDescIdx > -1) {
+            // Description exists without a code, now we are adding a code to it.
+            currentMaterialDb[existingByDescIdx].code = item.correctedCode!.trim(); // Use original casing
+          } else {
+            // Neither code nor description (as primary key) exists, add new.
+            currentMaterialDb.push({
+              id: `usercorr-code-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+              description: item.correctedDescription.trim(),
+              code: item.correctedCode!.trim(),
+            });
+          }
         }
+      } else { // No corrected code provided
+        const existingByDescIdx = currentMaterialDb.findIndex(dbMat => dbMat.description.trim().toLowerCase() === correctedDescNormalized);
+        if (existingByDescIdx > -1) {
+          // Description exists. If it had a code, and now we're saying no code, clear it.
+          // Or if it's just a confirmation of an existing item without code.
+          if (currentMaterialDb[existingByDescIdx].code) { // It had a code, now it doesn't
+            // This case might be complex: are we removing a code or confirming a description for an item that ALSO exists with code?
+            // For simplicity, if a user corrects an item to have NO code, and an item with that description exists,
+            // we assume they are confirming/updating that description. If it had a code, it implies removing it.
+            // However, we should be careful not to create a duplicate description if an item with the same desc but *different* code exists.
+            // This logic prioritizes the user's explicit correction for *this* instance.
+            // A more robust system might flag potential conflicts.
+            // For now, if found by desc, and corrected code is empty, ensure the found item's code is also empty.
+            // This is tricky because 'learning' should ideally not overwrite distinct items.
+            // Let's assume if they clear the code, they mean this specific entry has no code.
+            // If the database item found by description already had a code, we might not want to clear it globally from one correction.
+            // This part of "learning" is the most complex.
+            // Let's refine: if a description matches, and the DB item has a code, but the correction has no code,
+            // we DON'T modify the DB item's code. We assume the user is correcting the description for an entry that should not have a code.
+            // So, if it's found by desc, and the DB item has no code, it's a match (or minor text update).
+            // If it's found by desc, and the DB item HAS a code, but corrected code is EMPTY, this implies a *new* entry
+            // for the DB that has this description but explicitly no code, *unless* the original item being corrected also had no code.
+
+            // Simpler: If description matches, and the DB entry has no code, we are good.
+            // If description matches, and DB entry HAS a code, but user provides NO code for correction, this correction
+            // might be for an item that is distinct from the coded one in the DB.
+            // So, only add if no exact match (desc + no code) is found.
+            const trulyNewEntry = !currentMaterialDb.some(dbMat =>
+              dbMat.description.trim().toLowerCase() === correctedDescNormalized &&
+              (dbMat.code?.trim().toLowerCase() || '') === ''
+            );
+            if (trulyNewEntry) {
+              currentMaterialDb.push({
+                id: `usercorr-desc-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                description: item.correctedDescription.trim(),
+                code: '', // Explicitly no code
+              });
+            }
+
+          }
+          // else: description exists and has no code in DB, so it's a match or minor text update to description - already handled if desc changed.
+        } else { // Description doesn't exist in DB
+          currentMaterialDb.push({
+            id: `usercorr-desc-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+            description: item.correctedDescription.trim(),
+            code: '',
+          });
+        }
+      }
     });
-    setMaterialDatabase(currentMaterialDb.sort((a,b) => a.description.localeCompare(b.description))); 
+    setMaterialDatabase(currentMaterialDb.sort((a, b) => a.description.localeCompare(b.description)));
 
     setDocuments(updatedProcessedDocuments);
 
@@ -399,9 +399,9 @@ const App: React.FC = () => {
   };
 
 
-  const handleProceedToReview = () => { 
+  const handleProceedToReview = () => {
     if (documents.some(doc => doc.status === 'success')) {
-      setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK); 
+      setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
     } else {
       addToast(UI_TEXT.noSuccessfullyProcessedDocsForReview, AlertType.Warning);
     }
@@ -421,13 +421,13 @@ const App: React.FC = () => {
   };
 
   const handleSaveEditedDocument = (docId: string, updatedData: ExtractedData) => {
-    setDocuments(prevDocs => 
-      prevDocs.map(doc => 
-        doc.id === docId ? { ...doc, extractedData: updatedData, status: 'success' } : doc 
+    setDocuments(prevDocs =>
+      prevDocs.map(doc =>
+        doc.id === docId ? { ...doc, extractedData: updatedData, status: 'success' } : doc
       )
     );
     handleCloseEditModal();
-    addToast(`Dados do documento '${documents.find(d=>d.id === docId)?.fileName}' atualizados. ${UI_TEXT.aiCorrectionFeedbackNote}`, AlertType.Success);
+    addToast(`Dados do documento '${documents.find(d => d.id === docId)?.fileName}' atualizados. ${UI_TEXT.aiCorrectionFeedbackNote}`, AlertType.Success);
   };
 
 
@@ -436,16 +436,16 @@ const App: React.FC = () => {
       addToast('Nenhum hospital selecionado ou nenhum documento com dados válidos para gerar o relatório.', AlertType.Error);
       return;
     }
-    setAppState(AppState.PROCESSING_DOCUMENTS); 
+    setAppState(AppState.PROCESSING_DOCUMENTS);
 
     const successfulDocsForMaterials = documents.filter(d => d.status === 'success' && d.extractedData);
-    
+
     const allConsumedMaterials: Array<MaterialUsed & { sourceDocId: string }> = [];
     successfulDocsForMaterials.forEach(doc => {
       doc.extractedData!.materialsUsed.forEach(mat => {
-        allConsumedMaterials.push({ 
-            ...mat, 
-            sourceDocId: doc.id, 
+        allConsumedMaterials.push({
+          ...mat,
+          sourceDocId: doc.id,
         });
       });
     });
@@ -456,7 +456,7 @@ const App: React.FC = () => {
       const materialBaseKey = consumedMat.code || consumedMat.description.toLowerCase();
       const lotKeyPart = consumedMat.lotNumber ? `_LOT_${consumedMat.lotNumber}` : '_NO_LOT';
       const key = `${materialBaseKey}${lotKeyPart}`;
-      
+
       // Montar observação combinando IA e usuário
       function buildObservation(mat: any): string | null {
         const obsIa = mat.observacaoOcr?.trim();
@@ -471,7 +471,7 @@ const App: React.FC = () => {
         const existing = aggregatedMaterials.get(key)!;
         existing.totalConsumedQuantity += consumedMat.quantity;
         if (!existing.sourceDocumentIds.includes(consumedMat.sourceDocId)) {
-            existing.sourceDocumentIds.push(consumedMat.sourceDocId);
+          existing.sourceDocumentIds.push(consumedMat.sourceDocId);
         }
         const obs = buildObservation(consumedMat);
         if (obs) {
@@ -498,91 +498,91 @@ const App: React.FC = () => {
         });
       }
     });
-    
-     aggregatedMaterials.forEach(material => {
-        const totalForThisMaterialLot = allConsumedMaterials
-            .filter(cm => {
-                const cmBaseKey = cm.code || cm.description.toLowerCase();
-                const cmLotKeyPart = cm.lotNumber ? `_LOT_${cm.lotNumber}` : '_NO_LOT';
-                const cmKey = `${cmBaseKey}${cmLotKeyPart}`;
-                
-                const matBaseKey = material.code || material.description.toLowerCase();
-                const matLotKeyPart = material.lotNumber ? `_LOT_${material.lotNumber}` : '_NO_LOT';
-                const matKey = `${matBaseKey}${matLotKeyPart}`;
-                return cmKey === matKey;
-            })
-            .reduce((sum, cm) => sum + cm.quantity, 0);
-        
-        material.totalConsumedQuantity = totalForThisMaterialLot;
+
+    aggregatedMaterials.forEach(material => {
+      const totalForThisMaterialLot = allConsumedMaterials
+        .filter(cm => {
+          const cmBaseKey = cm.code || cm.description.toLowerCase();
+          const cmLotKeyPart = cm.lotNumber ? `_LOT_${cm.lotNumber}` : '_NO_LOT';
+          const cmKey = `${cmBaseKey}${cmLotKeyPart}`;
+
+          const matBaseKey = material.code || material.description.toLowerCase();
+          const matLotKeyPart = material.lotNumber ? `_LOT_${material.lotNumber}` : '_NO_LOT';
+          const matKey = `${matBaseKey}${matLotKeyPart}`;
+          return cmKey === matKey;
+        })
+        .reduce((sum, cm) => sum + cm.quantity, 0);
+
+      material.totalConsumedQuantity = totalForThisMaterialLot;
     });
 
 
     aggregatedMaterials.forEach(material => {
-        const materialDescLower = material.description.toLowerCase();
-        const materialCodeLower = material.code?.toLowerCase();
+      const materialDescLower = material.description.toLowerCase();
+      const materialCodeLower = material.code?.toLowerCase();
 
-        const stockItem = materialDatabase.find( 
-            dbItem => {
-                const dbDescLower = dbItem.description.toLowerCase();
-                const dbCodeLower = dbItem.code?.toLowerCase();
+      const stockItem = materialDatabase.find(
+        dbItem => {
+          const dbDescLower = dbItem.description.toLowerCase();
+          const dbCodeLower = dbItem.code?.toLowerCase();
 
-                if (materialCodeLower && dbCodeLower) { // Both have codes
-                    return dbCodeLower === materialCodeLower;
-                }
-                if (!materialCodeLower && !dbCodeLower) { // Neither has a code, compare by description
-                    return dbDescLower === materialDescLower;
-                }
-                // One has a code, the other doesn't.
-                // Consider a match if codes match (already handled) OR if DB has no code and descriptions match.
-                // Or if consumed has no code but matches DB description that might or might not have a code (preferring match with code if available)
-                // This part can be tricky. Let's prioritize code match. If no code on consumed, match by description.
-                if (!materialCodeLower && dbDescLower === materialDescLower) {
-                     // If multiple DB entries match description (one with code, one without), this might pick the one without.
-                     // This needs to be an exact match or a learned alias.
-                     // For now, this finds a DB item if EITHER code matches OR (if consumed has no code) description matches.
-                    return true;
-                }
-                return false;
-            }
-        );
-
-        material.replenishQuantity = material.totalConsumedQuantity; 
-
-        if (!stockItem) {
-            material.replenishmentSuggestionNote = "Sistema: Material não cadastrado na base. Reposição baseada no consumo.";
-        } else {
-            // Check if the description in the DB is different from consumed, despite matching code
-            if (stockItem.code && material.code && stockItem.code.toLowerCase() === material.code.toLowerCase() && 
-                stockItem.description.toLowerCase() !== material.description.toLowerCase()) {
-                 material.replenishmentSuggestionNote = `Sistema: Código ${material.code} cadastrado como "${stockItem.description}". Consumido como "${material.description}". Verificar descrição.`;
-            } else {
-                material.replenishmentSuggestionNote = "Sistema: Reposição baseada no consumo.";
-            }
+          if (materialCodeLower && dbCodeLower) { // Both have codes
+            return dbCodeLower === materialCodeLower;
+          }
+          if (!materialCodeLower && !dbCodeLower) { // Neither has a code, compare by description
+            return dbDescLower === materialDescLower;
+          }
+          // One has a code, the other doesn't.
+          // Consider a match if codes match (already handled) OR if DB has no code and descriptions match.
+          // Or if consumed has no code but matches DB description that might or might not have a code (preferring match with code if available)
+          // This part can be tricky. Let's prioritize code match. If no code on consumed, match by description.
+          if (!materialCodeLower && dbDescLower === materialDescLower) {
+            // If multiple DB entries match description (one with code, one without), this might pick the one without.
+            // This needs to be an exact match or a learned alias.
+            // For now, this finds a DB item if EITHER code matches OR (if consumed has no code) description matches.
+            return true;
+          }
+          return false;
         }
+      );
+
+      material.replenishQuantity = material.totalConsumedQuantity;
+
+      if (!stockItem) {
+        material.replenishmentSuggestionNote = "Sistema: Material não cadastrado na base. Reposição baseada no consumo.";
+      } else {
+        // Check if the description in the DB is different from consumed, despite matching code
+        if (stockItem.code && material.code && stockItem.code.toLowerCase() === material.code.toLowerCase() &&
+          stockItem.description.toLowerCase() !== material.description.toLowerCase()) {
+          material.replenishmentSuggestionNote = `Sistema: Código ${material.code} cadastrado como "${stockItem.description}". Consumido como "${material.description}". Verificar descrição.`;
+        } else {
+          material.replenishmentSuggestionNote = "Sistema: Reposição baseada no consumo.";
+        }
+      }
     });
 
 
     const sortedMaterials = Array.from(aggregatedMaterials.values()).sort((a, b) => {
-        if (a.description.localeCompare(b.description) !== 0) {
-            return a.description.localeCompare(b.description);
-        }
-        return (a.lotNumber || '').localeCompare(b.lotNumber || '');
+      if (a.description.localeCompare(b.description) !== 0) {
+        return a.description.localeCompare(b.description);
+      }
+      return (a.lotNumber || '').localeCompare(b.lotNumber || '');
     });
 
     const orderDate = new Date().toISOString().split('T')[0];
-    
+
     const docsForPdfSummary: SourceDocumentInfoForPdf[] = documents.map(d => ({
       id: d.id,
       fileName: d.fileName,
-      status: d.status, 
+      status: d.status,
       errorMessage: d.errorMessage,
       patientName: d.extractedData?.patientName || null,
-      surgeryDate: d.extractedData?.surgeryDate || null 
+      surgeryDate: d.extractedData?.surgeryDate || null
     }));
 
     const newConsolidatedOrder: ConsolidatedOrderData = {
       orderId: `${selectedHospital}-${orderDate.replace(/-/g, '')}-${Math.floor(Math.random() * 900 + 100)}`,
-      hospital: selectedHospital, 
+      hospital: selectedHospital,
       orderDate: orderDate,
       sourceDocumentsProcessed: docsForPdfSummary,
       materialsToReplenish: sortedMaterials,
@@ -590,8 +590,8 @@ const App: React.FC = () => {
     };
 
     setLastGeneratedOrder(newConsolidatedOrder);
-    setOrderHistory(prevHistory => [newConsolidatedOrder, ...prevHistory]); 
-    
+    setOrderHistory(prevHistory => [newConsolidatedOrder, ...prevHistory]);
+
     try {
       await generateConsolidatedOrderPdf(newConsolidatedOrder, selectedHospitalName);
       addToast(UI_TEXT.pdfGenerationSuccessMessage, AlertType.Success);
@@ -599,7 +599,7 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Error generating PDF:", error);
       addToast(`Falha ao gerar PDF: ${(error as Error).message}`, AlertType.Error);
-      setAppState(AppState.REVIEW_AND_EDIT); 
+      setAppState(AppState.REVIEW_AND_EDIT);
     }
   };
 
@@ -611,7 +611,7 @@ const App: React.FC = () => {
     addToast('Novo lote iniciado.', AlertType.Info);
     setAppState(AppState.SELECTING_HOSPITAL);
   };
-  
+
   const handleNavigateToHistory = () => {
     setAppState(AppState.VIEW_HISTORY);
   };
@@ -630,7 +630,7 @@ const App: React.FC = () => {
       console.error("Error reprinting PDF:", error);
       addToast(`${UI_TEXT.pdfReprintErrorMessage}: ${(error as Error).message}`, AlertType.Error);
     } finally {
-      setAppState(originalAppState); 
+      setAppState(originalAppState);
     }
   };
 
@@ -650,7 +650,7 @@ const App: React.FC = () => {
 
       order.materialsToReplenish.forEach(material => {
         const key = `${material.description.toLowerCase()}_${(material.code || 'N/A').toLowerCase()}_${hospitalName.toLowerCase()}`;
-        
+
         if (consumptionDataMap.has(key)) {
           const existingEntry = consumptionDataMap.get(key)!;
           existingEntry.consumedQuantity += material.totalConsumedQuantity;
@@ -701,32 +701,32 @@ const App: React.FC = () => {
     if (!patientGroupKeyToRemove) return;
 
     setDocuments(prevDocs => {
-        const docsToRemoveThisGroup: ProcessedDocumentEntry[] = [];
-        const remainingDocs = prevDocs.filter(doc => {
-            if (doc.status !== 'success' || !doc.extractedData) return true; 
+      const docsToRemoveThisGroup: ProcessedDocumentEntry[] = [];
+      const remainingDocs = prevDocs.filter(doc => {
+        if (doc.status !== 'success' || !doc.extractedData) return true;
 
-            const docPatientNameKey = doc.extractedData.patientName?.trim() || UI_TEXT.patientGroupHeader(null);
-            
-            if (docPatientNameKey === patientGroupKeyToRemove) {
-                docsToRemoveThisGroup.push(doc);
-                return false; 
-            }
-            return true; 
-        });
+        const docPatientNameKey = doc.extractedData.patientName?.trim() || UI_TEXT.patientGroupHeader(null);
 
-        docsToRemoveThisGroup.forEach(doc => {
-            if (doc.imagePreviewUrl) {
-                URL.revokeObjectURL(doc.imagePreviewUrl);
-            }
-        });
-        
-        return remainingDocs;
+        if (docPatientNameKey === patientGroupKeyToRemove) {
+          docsToRemoveThisGroup.push(doc);
+          return false;
+        }
+        return true;
+      });
+
+      docsToRemoveThisGroup.forEach(doc => {
+        if (doc.imagePreviewUrl) {
+          URL.revokeObjectURL(doc.imagePreviewUrl);
+        }
+      });
+
+      return remainingDocs;
     });
 
     addToast(`Paciente/grupo '${patientGroupKeyToRemove}' e seus documentos foram removidos.`, AlertType.Success);
     handleCloseRemovePatientConfirmModal();
   };
-  
+
   const handleMaterialDatabaseUpdate = (updatedDb: MaterialDatabaseItem[]) => {
     setMaterialDatabase(updatedDb);
   };
@@ -806,43 +806,43 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (appState) {
       case AppState.SELECTING_HOSPITAL:
-        return <HospitalSelector 
-                    hospitals={hospitalOptions} 
-                    selectedHospital={selectedHospital}
-                    setSelectedHospital={setSelectedHospital}
-                    onSelect={handleHospitalSelect} 
-                    onViewHistory={orderHistory.length > 0 ? handleNavigateToHistory : undefined}
-                    onManageMaterialDatabase={handleNavigateToManageMaterialDatabase}
-                    onAddNewHospital={handleAddNewHospital} 
-                    onGenerateGlobalConsumptionReport={orderHistory.length > 0 ? handleGenerateGlobalConsumptionReport : undefined}
-                    showTooltips={showTooltips}
-                    setShowTooltips={setShowTooltips}
-                    onRemoveHospital={handleRemoveHospital}
-                    onEditHospitalName={handleEditHospitalName}
-               />;
+        return <HospitalSelector
+          hospitals={hospitalOptions}
+          selectedHospital={selectedHospital}
+          setSelectedHospital={setSelectedHospital}
+          onSelect={handleHospitalSelect}
+          onViewHistory={orderHistory.length > 0 ? handleNavigateToHistory : undefined}
+          onManageMaterialDatabase={handleNavigateToManageMaterialDatabase}
+          onAddNewHospital={handleAddNewHospital}
+          onGenerateGlobalConsumptionReport={orderHistory.length > 0 ? handleGenerateGlobalConsumptionReport : undefined}
+          showTooltips={showTooltips}
+          setShowTooltips={setShowTooltips}
+          onRemoveHospital={handleRemoveHospital}
+          onEditHospitalName={handleEditHospitalName}
+        />;
       case AppState.MANAGING_DOCUMENTS:
         if (!selectedHospital) return <Alert message="Hospital não selecionado." type={AlertType.Error} />;
         return (
           <DocumentManager
             hospitalName={selectedHospitalName}
             documents={documents}
-            onAddDocuments={handleAddDocuments} 
+            onAddDocuments={handleAddDocuments}
             onRemoveDocument={handleRemoveDocument}
             onProcessAll={handleProcessAllDocuments}
             processingDisabled={documents.every(doc => doc.status === 'success' || doc.status === 'error') && documents.filter(doc => doc.status === 'pending').length === 0}
             canProceedToCorrection={documents.some(doc => doc.status === 'success')}
-            onProceedToCorrection={handleProceedToReview} 
+            onProceedToCorrection={handleProceedToReview}
             onGoBackToHospitalSelection={handleGoBackToHospitalSelection}
           />
         );
       case AppState.PROCESSING_DOCUMENTS:
-         let spinnerText = UI_TEXT.processingDocumentsMessage;
-         if (!selectedHospitalName && !lastGeneratedOrder && orderHistory.length > 0) {
-            spinnerText = UI_TEXT.generatingGlobalConsumptionReportMessage;
-         } else if (lastGeneratedOrder && !selectedHospital) { 
-            spinnerText = "Gerando PDF do pedido...";
-        } else if (orderHistory.length > 0 && !selectedHospital && appState === AppState.PROCESSING_DOCUMENTS) { 
-             spinnerText = "Reimprimindo PDF...";
+        let spinnerText = UI_TEXT.processingDocumentsMessage;
+        if (!selectedHospitalName && !lastGeneratedOrder && orderHistory.length > 0) {
+          spinnerText = UI_TEXT.generatingGlobalConsumptionReportMessage;
+        } else if (lastGeneratedOrder && !selectedHospital) {
+          spinnerText = "Gerando PDF do pedido...";
+        } else if (orderHistory.length > 0 && !selectedHospital && appState === AppState.PROCESSING_DOCUMENTS) {
+          spinnerText = "Reimprimindo PDF...";
         }
         return (
           <div className="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white via-indigo-50 to-purple-50">
@@ -854,79 +854,130 @@ const App: React.FC = () => {
 
       case AppState.DATA_CORRECTION_AI_FEEDBACK:
         return (
-            <MaterialCorrectionScreen
-                hospitalName={selectedHospitalName}
-                processedDocuments={documents} 
-                onConfirmCorrections={handleConfirmMaterialCorrections} 
-                onSkip={handleSkipMaterialCorrections}
-                onGoBack={() => setAppState(AppState.MANAGING_DOCUMENTS)}
-                onRetryErroredDocuments={handleRetryErroredDocuments}
-                materialDbItems={materialDatabase}
-                onMaterialDbUpdate={setMaterialDatabase}
-            />
+          <MaterialCorrectionScreen
+            hospitalName={selectedHospitalName}
+            processedDocuments={documents}
+            onConfirmCorrections={handleConfirmMaterialCorrections}
+            onSkip={handleSkipMaterialCorrections}
+            onGoBack={() => setAppState(AppState.MANAGING_DOCUMENTS)}
+            onRetryErroredDocuments={handleRetryErroredDocuments}
+            materialDbItems={materialDatabase}
+            onMaterialDbUpdate={setMaterialDatabase}
+          />
         );
       case AppState.REVIEW_AND_EDIT:
         return (
-            <ExtractionReviewScreen
-                documents={documents}
-                onEditDocument={handleEditDocument}
-                onConfirmAndGenerateReport={handleGenerateConsolidatedPdf}
-                onGoBack={() => {
-                  setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
-                }}
-                hospitalName={selectedHospitalName}
-                onOpenRemovePatientConfirmModal={handleOpenRemovePatientConfirmModal}
-            />
+          <ExtractionReviewScreen
+            documents={documents}
+            onEditDocument={handleEditDocument}
+            onConfirmAndGenerateReport={handleGenerateConsolidatedPdf}
+            onGoBack={() => {
+              setAppState(AppState.DATA_CORRECTION_AI_FEEDBACK);
+            }}
+            hospitalName={selectedHospitalName}
+            onOpenRemovePatientConfirmModal={handleOpenRemovePatientConfirmModal}
+          />
         );
       case AppState.REPORT_GENERATED:
         return (
-            <div className="w-full min-h-screen flex items-start justify-center pt-20">
-              <div className="w-full max-w-md bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-2xl text-center mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-purple-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-2">{UI_TEXT.pdfGenerationSuccessMessage}</h2>
-                {lastGeneratedOrder && <p className="text-base text-slate-500 mb-6">ID do Pedido Gerado: {lastGeneratedOrder.orderId}</p>}
-                <button
-                    onClick={handleStartNew}
-                    className={`${purpleGradientPrimary} mb-3`}
-                >
-                    {UI_TEXT.startNewBatchAfterPdfButton}
-                </button>
-                {orderHistory.length > 0 && (
-                    <button
-                        onClick={handleNavigateToHistory}
-                        className={purpleGradientLight}
-                    >
-                        {UI_TEXT.viewOrderHistoryButton}
-                    </button>
+          <div className="w-full h-screen flex items-start justify-center bg-gradient-to-br from-white via-indigo-50 to-purple-50 px-4 pt-20 overflow-hidden">
+            {/* Compact Premium Success Card */}
+            <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-green-100 overflow-hidden animate-fade-in" style={{boxShadow: '0 6px 32px 0 rgba(34,197,94,0.10), 0 1.5px 6px 0 rgba(34,197,94,0.08)'}}>
+              
+              {/* Compact Green Header */}
+              <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4 text-center">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <h1 className="text-xl font-bold text-white leading-tight">
+                      Relatório PDF Gerado!
+                    </h1>
+                    <p className="text-green-100 text-sm font-medium">
+                      Download iniciado com sucesso
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Compact Content */}
+              <div className="p-6 space-y-4">
+                {/* Order Info */}
+                {lastGeneratedOrder && (
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-green-600">ID do Pedido</p>
+                        <p className="text-lg font-bold text-green-700">{lastGeneratedOrder.orderId}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-green-600">Materiais</p>
+                        <p className="text-lg font-bold text-green-700">{lastGeneratedOrder.materialsToReplenish.length}</p>
+                      </div>
+                    </div>
+                  </div>
                 )}
+                
+                {/* Compact Action Buttons */}
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={handleStartNew}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    {UI_TEXT.startNewBatchAfterPdfButton}
+                  </button>
+                  
+                  {orderHistory.length > 0 && (
+                    <button
+                      onClick={handleNavigateToHistory}
+                      className="w-full bg-white hover:bg-slate-50 text-slate-700 font-semibold py-3 px-4 rounded-lg shadow border border-slate-200 hover:border-slate-300 transition-all duration-200 flex items-center justify-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {UI_TEXT.viewOrderHistoryButton}
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Status Info */}
+              <div className="px-6 pb-4 text-center">
+                <p className="text-sm text-slate-500">
+                  📄 PDF salvo na pasta Downloads
+                </p>
               </div>
             </div>
+          </div>
         );
       case AppState.VIEW_HISTORY:
         return (
-            <OrderHistoryScreen
-                history={orderHistory}
-                hospitalOptions={hospitalOptions} 
-                onReprintPdf={handleReprintPdf}
-                onBack={handleGoBackToHospitalSelection}
-            />
+          <OrderHistoryScreen
+            history={orderHistory}
+            hospitalOptions={hospitalOptions}
+            onReprintPdf={handleReprintPdf}
+            onBack={handleGoBackToHospitalSelection}
+          />
         );
-      case AppState.MANAGE_MATERIAL_DATABASE: 
+      case AppState.MANAGE_MATERIAL_DATABASE:
         return (
-            <MaterialDatabaseManagerScreen
-                materialDbItems={materialDatabase}
-                onMaterialDbUpdate={handleMaterialDatabaseUpdate}
-                onBack={handleGoBackToHospitalSelection}
-                setGlobalAlert={(alert) => { if (alert) addToast(alert.message, alert.type); }}
-            />
+          <MaterialDatabaseManagerScreen
+            materialDbItems={materialDatabase}
+            onUpdateMaterialDb={handleMaterialDatabaseUpdate}
+            onGoBack={handleGoBackToHospitalSelection}
+          />
         );
       default:
         return <Alert message="Estado desconhecido da aplicação." type={AlertType.Error} />;
     }
   };
-  
+
   // Gradiente suave para fundo premium
   const appBackgroundClass = "min-h-screen min-w-[1200px] flex flex-col bg-gradient-to-br from-white via-indigo-50 to-purple-50 text-slate-700 w-full";
   // Aplica a classe no body dinamicamente para esconder scrollbars do navegador na tela de seleção de hospital
@@ -960,7 +1011,7 @@ const App: React.FC = () => {
         .hide-browser-scrollbar::-webkit-scrollbar { display: none !important; }
         .hide-browser-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
       `}</style>
-      <div className={appBackgroundClass + " min-h-screen w-full"} style={{width: '100vw'}}>
+      <div className={appBackgroundClass + " min-h-screen w-full"} style={{ width: '100vw' }}>
         {/* Header só aparece se NÃO for uma tela com logotipo centralizado */}
         {appState === AppState.VIEW_HISTORY || appState === AppState.MANAGE_MATERIAL_DATABASE ? <Header title="HealthAdmin" /> : null}
         <main className="flex-grow w-full h-full px-0 py-0 flex flex-col">
@@ -972,20 +1023,47 @@ const App: React.FC = () => {
           <div className="flex-1 w-full h-full">
             {/* Se for uma tela com logotipo centralizado, mostra logo centralizado */}
             {appState === AppState.SELECTING_HOSPITAL || appState === AppState.MANAGING_DOCUMENTS || appState === AppState.DATA_CORRECTION_AI_FEEDBACK || appState === AppState.REVIEW_AND_EDIT || appState === AppState.REPORT_GENERATED ? (
-              <div className="w-full min-h-screen flex flex-col items-center pt-2 select-none" style={{minHeight: '80vh'}}>
-                <div className="flex flex-row items-center justify-center mb-2 mt-2">
-                  <span className="text-2xl sm:text-4xl font-extrabold text-indigo-700 tracking-tight" style={{letterSpacing: '0.01em'}}>
-                    HealthAdmin
-                  </span>
-                  <svg width="48" height="24" viewBox="0 0 48 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-2">
-                    <polyline points="2,12 11,12 15,21 21,3 27,18 32,12 46,12" stroke="#4F46E5" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                {/* Linha do header com botão de configurações à direita */}
-                <div className="w-full flex justify-center items-center">
-                  <div className="w-full max-w-screen-2xl flex items-center">
-                    <div className="flex-1">
-                      <div className="w-full h-[2.5px] rounded-full shadow-md" style={{background: 'linear-gradient(90deg, #fff 0%, #e0e7ff 40%, #ede9fe 60%, #fff 100%)', boxShadow: '0 2px 8px 0 rgba(80,60,180,0.07)'}} />
+              <div className="w-full min-h-screen flex flex-col items-center pt-2 select-none" style={{ minHeight: '80vh' }}>
+                {/* Header Premium Container */}
+                <div className="flex flex-col items-center mb-8 mt-4 relative">
+                  {/* Título Principal */}
+                  <div className="flex flex-row items-center justify-center mb-2 relative">
+                    <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black bg-gradient-to-r from-purple-500 to-indigo-600 bg-clip-text text-transparent tracking-tight drop-shadow-sm"
+                      style={{
+                        letterSpacing: '-0.02em',
+                        fontFamily: "'Inter', 'Segoe UI', 'Roboto', sans-serif",
+                        textShadow: '0 0 40px rgba(139, 92, 246, 0.15)'
+                      }}>
+                      HealthAdmin
+                    </h1>
+                  </div>
+
+                  {/* Subtítulo Elegante */}
+                  <div className="flex justify-center mb-4 relative">
+                    <p className="text-base sm:text-lg font-semibold text-slate-500 tracking-widest uppercase opacity-90"
+                      style={{
+                        letterSpacing: '0.15em',
+                        fontFamily: "'Inter', 'Segoe UI', 'Roboto', sans-serif",
+                        fontSize: '0.875rem'
+                      }}>
+                      Sistema Inteligente de Reposição OPME
+                    </p>
+                  </div>
+
+                  {/* Linha Decorativa Premium */}
+                  <div className="w-full flex justify-center items-center mb-2">
+                    <div className="w-full max-w-lg flex items-center relative">
+                      <div className="flex-1 relative">
+                        <div className="w-full h-[3px] rounded-full shadow-lg relative overflow-hidden"
+                          style={{
+                            background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, #e0e7ff 20%, #c7d2fe 35%, #a5b4fc 50%, #c7d2fe 65%, #e0e7ff 80%, rgba(255,255,255,0) 100%)',
+                            boxShadow: '0 4px 16px 0 rgba(139, 92, 246, 0.25), 0 2px 8px 0 rgba(79, 70, 229, 0.15)'
+                          }}>
+                          {/* Brilho animado sutil */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"
+                            style={{ animationDuration: '3s' }}></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -999,54 +1077,54 @@ const App: React.FC = () => {
         </main>
 
         {showEditModal && editingDoc && editingDoc.extractedData && (
-          <Modal 
-              isOpen={showEditModal} 
-              onClose={handleCloseEditModal} 
-              title={UI_TEXT.modalTitleEditData(editingDoc.fileName)}
-              size="4xl"
+          <Modal
+            isOpen={showEditModal}
+            onClose={handleCloseEditModal}
+            title={UI_TEXT.modalTitleEditData(editingDoc.fileName)}
+            size="4xl"
           >
             <OrderForm
               initialData={editingDoc.extractedData}
               onSubmit={(updatedData) => handleSaveEditedDocument(editingDoc.id, updatedData)}
-              submitButtonText={UI_TEXT.saveChangesButton} 
+              submitButtonText={UI_TEXT.saveChangesButton}
               materialDbItems={materialDatabase}
             />
-             <div className="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                  <button 
-                      type="button" 
-                      onClick={handleCloseEditModal}
-                      className={modalPurpleGradientLight}
-                  >
-                      {UI_TEXT.cancelButton}
-                  </button>
-              </div>
+            <div className="mt-6 flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleCloseEditModal}
+                className={modalPurpleGradientLight}
+              >
+                {UI_TEXT.cancelButton}
+              </button>
+            </div>
           </Modal>
         )}
 
         {showRemovePatientConfirmModal && patientGroupKeyToRemove && (
           <Modal
-              isOpen={showRemovePatientConfirmModal}
-              onClose={handleCloseRemovePatientConfirmModal}
-              title={UI_TEXT.removePatientConfirmTitle}
-              size="md"
+            isOpen={showRemovePatientConfirmModal}
+            onClose={handleCloseRemovePatientConfirmModal}
+            title={UI_TEXT.removePatientConfirmTitle}
+            size="md"
           >
-              <p className="text-base text-slate-600 mb-6">{UI_TEXT.removePatientConfirmMessage(patientGroupKeyToRemove)}</p>
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                  <button
-                      type="button"
-                      onClick={handleCloseRemovePatientConfirmModal}
-                      className={modalPurpleGradientLight}
-                  >
-                      {UI_TEXT.cancelButton}
-                  </button>
-                  <button
-                      type="button"
-                      onClick={handleConfirmRemovePatientGroup}
-                      className={redGradientDestructive}
-                  >
-                      {UI_TEXT.confirmRemoveButton}
-                  </button>
-              </div>
+            <p className="text-base text-slate-600 mb-6">{UI_TEXT.removePatientConfirmMessage(patientGroupKeyToRemove)}</p>
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleCloseRemovePatientConfirmModal}
+                className={modalPurpleGradientLight}
+              >
+                {UI_TEXT.cancelButton}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRemovePatientGroup}
+                className={redGradientDestructive}
+              >
+                {UI_TEXT.confirmRemoveButton}
+              </button>
+            </div>
           </Modal>
         )}
       </div>
