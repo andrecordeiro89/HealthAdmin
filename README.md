@@ -50,7 +50,7 @@ O **HealthAdmin** é uma solução moderna e inteligente para a gestão de mater
 3. **Configure as variáveis de ambiente**
    ```bash
    # Crie o arquivo .env.local na raiz do projeto
-   echo "GEMINI_API_KEY=sua_chave_gemini_aqui" > .env.local
+   echo "VITE_GEMINI_API_KEY=sua_chave_gemini_aqui" > .env.local
    ```
 
 4. **Execute o projeto**
@@ -168,4 +168,4 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 <div align="center">
      <p>© 2025 André Cordeiro - Todos os direitos reservados</p>
-</div> 
+</div>
