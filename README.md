@@ -48,10 +48,24 @@ O **HealthAdmin** é uma solução moderna e inteligente para a gestão de mater
    ```
 
 3. **Configure as variáveis de ambiente**
+   
+   **Para Desenvolvimento:**
    ```bash
-   # Crie o arquivo .env.local na raiz do projeto
-   echo "VITE_GEMINI_API_KEY=sua_chave_gemini_aqui" > .env.local
+   # Copie o arquivo de exemplo
+   cp .env.example .env
+   
+   # Edite o arquivo .env e adicione sua chave da API do Gemini
+   # VITE_GEMINI_API_KEY=sua_chave_gemini_aqui
    ```
+   
+   **Para Produção:**
+   - Configure a variável `VITE_GEMINI_API_KEY` no seu provedor de hospedagem
+   - Exemplos:
+     - **Vercel**: Adicione em Project Settings > Environment Variables
+     - **Netlify**: Adicione em Site Settings > Environment Variables
+     - **GitHub Pages**: Use GitHub Secrets para Actions
+   
+   ⚠️ **Importante**: O arquivo `.env` não é enviado para o repositório por questões de segurança.
 
 4. **Execute o projeto**
    ```bash
@@ -151,6 +165,35 @@ Contribuições são sempre bem-vindas! Para contribuir:
 - ✅ Sanitização de dados de entrada
 - ✅ Armazenamento seguro de chaves API
 - ✅ HTTPS obrigatório em produção
+
+## Troubleshooting
+
+### Erro: "API_KEY for Gemini is not set in environment variables"
+
+**Problema**: A chave da API do Gemini não está configurada corretamente.
+
+**Soluções**:
+
+1. **Em Desenvolvimento**:
+   - Verifique se o arquivo `.env` existe na raiz do projeto
+   - Confirme que a variável está definida como `VITE_GEMINI_API_KEY=sua_chave`
+   - Reinicie o servidor de desenvolvimento (`npm run dev`)
+
+2. **Em Produção**:
+   - Configure a variável de ambiente `VITE_GEMINI_API_KEY` no seu provedor de hospedagem
+   - Faça um novo deploy após configurar a variável
+   - Verifique se a variável está visível no painel do provedor
+
+3. **Verificação**:
+   - Abra o console do navegador
+   - Procure por "Debug: VITE_GEMINI_API_KEY = SET" nos logs
+   - Se aparecer "NOT SET", a variável não está sendo carregada
+
+### Outros Problemas Comuns
+
+- **Build falha**: Verifique se todas as dependências estão instaladas (`npm install`)
+- **Página em branco**: Verifique o console do navegador para erros JavaScript
+- **Upload não funciona**: Verifique se a chave da API está configurada corretamente
 
 ## Suporte
 

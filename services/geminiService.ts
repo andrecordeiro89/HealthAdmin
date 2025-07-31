@@ -2,7 +2,8 @@ import { GoogleGenAI, GenerateContentResponse, GenerateContentParameters, Conten
 import { ExtractedData, MaterialUsed } from '../types'; // Added MaterialUsed to ensure type safety
 import { GEMINI_MODEL_TEXT } from '../constants';
 
-const apiKey = process.env.VITE_GEMINI_API_KEY;
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+console.log('Debug: VITE_GEMINI_API_KEY =', apiKey ? 'SET' : 'NOT SET');
 if (!apiKey) {
   console.error("API_KEY for Gemini is not set in environment variables. AI processing will fail.");
 }
