@@ -451,14 +451,14 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                                     {filteredPatientGroups.map(patientKey => (
                                         <div
                                             key={patientKey}
-                                            className={`rounded-lg font-semibold transition-all duration-200 text-sm flex items-center gap-2 whitespace-nowrap ${patientKey === searchTerm
+                                            className={`w-full rounded-lg font-semibold transition-all duration-200 text-sm flex items-center gap-2 ${patientKey === searchTerm
                                                 ? 'bg-gradient-to-r from-purple-600 to-indigo-700 text-white shadow-lg scale-[1.02]'
                                                 : 'bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 hover:from-purple-200 hover:to-indigo-200 hover:scale-[1.01] shadow-sm'
                                                 }`}
-                                            style={{ minWidth: 'fit-content' }}
+                                            
                                         >
                                             <button
-                                                className="flex-1 text-left px-4 py-3 flex items-center gap-3"
+                                                className="flex-1 min-w-0 text-left px-4 py-3 flex items-center gap-3"
                                                 onClick={() => setSearchTerm(patientKey)}
                                                 title={patientKey === searchTerm ? 'Paciente selecionado' : 'Selecionar paciente'}
                                             >
@@ -469,7 +469,7 @@ export const MaterialCorrectionScreen: React.FC<MaterialCorrectionScreenProps> =
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                                     </svg>
                                                 </div>
-                                                <span className="font-medium" style={{ minWidth: 'max-content' }}>{patientKey}</span>
+                                                <span className="font-medium truncate">{patientKey}</span>
                                                 {groupedEditableDocs[patientKey] && (
                                                     <span className={`ml-auto text-xs px-2 py-1 rounded-full font-bold flex-shrink-0 ${patientKey === searchTerm
                                                         ? 'bg-white/20 text-white'
